@@ -8,6 +8,25 @@ import os as os
 import csv
 import pandas as pd
 
+# Create a Text widget that uses pixels for dimensions (width and height)
+# Taken from http://code.activestate.com/recipes/578887-text-widget-width-and-height-in-pixels-tkinter/
+class Text2(Frame):
+    def __init__(self, master, width=0, height=0, **kwargs):
+        self.width = width
+        self.height = height
+
+        Frame.__init__(self, master, width=self.width, height=self.height)
+        self.text_widget = Text(self, **kwargs)
+        self.text_widget.pack(expand=YES, fill=BOTH)
+
+    def pack(self, *args, **kwargs):
+        Frame.pack(self, *args, **kwargs)
+        self.pack_propagate(False)
+
+    def grid(self, *args, **kwargs):
+        Frame.grid(self, *args, **kwargs)
+        self.grid_propagate(False)
+
 # Create a class that inherits from Frame class
 class Window(Frame):
 
@@ -47,6 +66,12 @@ class Window(Frame):
         # Adds the options to the menu
         menu.add_cascade(label="File", menu=fileMenu)
 
+        # Adds a textbox at the bottom
+        # Height is the lines to show, width is the number of characters to show
+        self.log = Text2(self.master, width=1280, height=90)
+        self.log.text_widget.insert(END, "Started the Data Science GUI!\n")
+        self.log.pack()
+
         # # Creates a button instance
         # # Sets the quit button to the window
         # quitButton = Button(self, text="Quit", command=self.client_exit)
@@ -62,14 +87,20 @@ class Window(Frame):
     #     img.place(x=0, y=0)
 
     def openFile(self):
+        # The full path of the file
         file = filedialog.askopenfilename(initialdir = getcwd(), title = "Select file",filetypes = (("csv files","*.csv"),))
-        df = pd.read_csv(file, sep=',')
-        print(df)
 
         if file:
             self.filename = os.path.basename(file)
-            self.text = Label(self, text=self.filename)
-            self.text.pack()
+
+            self.log.text_widget.insert(END, "Reading '" + self.filename + "' from '" + file + ".\n")
+
+
+            # Dataframe created from the file
+            self.df = pd.read_csv(file, sep=',')
+
+            # Insert
+            self.log.text_widget.insert(END, str(self.df) + "\n")
 
     def removeFile(self):
         self.text.destroy()
