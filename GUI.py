@@ -68,9 +68,9 @@ class Window(Frame):
 
         # Adds a textbox at the bottom
         # Height is the lines to show, width is the number of characters to show
-        self.log = Text2(self.master, width=1280, height=90)
-        self.log.text_widget.insert(END, "Started the Data Science GUI!\n")
-        self.log.pack()
+        self.mainLog = Text2(self.master, width=640, height=100)
+        self.mainLog.text_widget.insert(END, "Started the Data Science GUI!\n")
+        self.mainLog.pack()
 
         # # Creates a button instance
         # # Sets the quit button to the window
@@ -86,21 +86,35 @@ class Window(Frame):
     #     img.image = render
     #     img.place(x=0, y=0)
 
+    # Display the csv file in text
+    def displayFile(self):
+        # Create a new frame/window from root window
+        self.window = Toplevel(self)
+        self.window.geometry("640x480")
+        self.window.title(self.filename)
+
+        # Adds a textbox
+        # Height is the lines to show, width is the number of characters to show
+        self.sideLog = Text2(self.window, width=640, height=480)
+        self.sideLog.text_widget.insert(END, self.df)
+        self.sideLog.pack()
+
     def openFile(self):
         # The full path of the file
         file = filedialog.askopenfilename(initialdir = getcwd(), title = "Select file",filetypes = (("csv files","*.csv"),))
 
         if file:
+            # Actual filename
             self.filename = os.path.basename(file)
 
-            self.log.text_widget.insert(END, "Reading '" + self.filename + "' from '" + file + ".\n")
-
+            self.mainLog.text_widget.insert(END, "Reading '" + self.filename + "' from '" + file + "'.\n")
 
             # Dataframe created from the file
             self.df = pd.read_csv(file, sep=',')
 
-            # Insert
-            self.log.text_widget.insert(END, str(self.df) + "\n")
+            # Display the csv file
+            self.displayFile()
+
 
     def removeFile(self):
         self.text.destroy()
@@ -114,7 +128,7 @@ def main():
     root = Tk()
 
     # Creates size of the window
-    root.geometry("1280x720")
+    root.geometry("640x480")
 
     # Create an instance of window
     app = Window(root)
