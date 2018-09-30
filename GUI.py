@@ -83,10 +83,7 @@ class Window(Frame):
         self.mainLog.text_widget.insert(END, "Started the Data Science GUI!\n")
         self.mainLog.pack()
 
-        # # Creates a button instance
-        # # Sets the quit button to the window
-        # quitButton = Button(self, text="Quit", command=self.client_exit)
-        # quitButton.place(x=0, y=0)
+
 
     # def showImage(self):
     #     load = Image.open("chat.png")
@@ -99,7 +96,7 @@ class Window(Frame):
 
     # Display the csv file in text
     def displayFile(self):
-        # Create a new frame/window from root window
+        # Create a new frame/window from root window to display CSV file
         self.window = Toplevel(self)
         self.window.geometry("640x480")
         self.window.title(self.filename)
@@ -110,7 +107,31 @@ class Window(Frame):
         self.sideLog.text_widget.insert(END, self.df)
         self.sideLog.pack()
 
+    def displayResult(self):
+        # Destroy if result window and log exists.
+        try:
+            self.window2.destroy()
+            self.sideLog2.destroy()
+        except (NameError, AttributeError):
+            pass
+
+        # Create a new frame/window from root window to display CSV file
+        self.window2 = Toplevel(self)
+        self.window2.geometry("640x480")
+        self.window2.title("Results of " + self.filename)
+
+        # Adds a textbox
+        # Height is the lines to show, width is the number of characters to show
+        self.sideLog2 = Text2(self.window2, width=640, height=480)
+        self.sideLog2.text_widget.insert(END, "Accuracy for " + self.algorithm + ": " + str(self.accuracy))
+        self.sideLog2.pack()
+
+
     def openFile(self):
+        # Clear the widgets in the frame every time "Open File" is clicked
+        for widget in self.winfo_children():
+            widget.destroy()
+
         # The full path of the file
         file = filedialog.askopenfilename(initialdir = getcwd(), title = "Select file",filetypes = (("csv files","*.csv"),))
 
@@ -140,51 +161,36 @@ class Window(Frame):
 
 
     def selectedAlgorithm(self, algorithm):
-        if algorithm == "K-Nearest Neighbors":
-            Label(self.parameterFrame, text="n_neighbors").grid(row=0, column=0)
+        # Clear the widgets in the frame every time an algorithm is selected
+        for widget in self.parameterFrame.winfo_children():
+            widget.destroy()
+
+        Label(self.parameterFrame, text="test_size").grid(row=0, column=0)
+        self.test_size = Entry(self.parameterFrame)
+        self.test_size.grid(row=0, column=1)
+        self.test_size.insert(0, 0.3)
+
+        Label(self.parameterFrame, text="random_state").grid(row=0, column=2)
+        self.random_state = Entry(self.parameterFrame)
+        self.random_state.grid(row=0, column=3)
+        self.random_state.insert(0, 2)
+
+        self.algorithm = algorithm
+
+        if self.algorithm == "K-Nearest Neighbors":
+            Label(self.parameterFrame, text="n_neighbors").grid(row=0, column=4)
             self.n_neighbors = Entry(self.parameterFrame)
-            self.n_neighbors.grid(row=0, column=1)
+            self.n_neighbors.grid(row=0, column=5)
             self.n_neighbors.insert(0, 5)
 
-            Label(self.parameterFrame, text="weights").grid(row=0, column=2)
-            self.weights = Entry(self.parameterFrame)
-            self.weights.grid(row=0, column=3)
-            self.weights.insert(0, "uniform")
+            submit = Button(self.parameterFrame, text="Submit", command=self.compute)
+            submit.grid(row=3, column=3)
 
-            Label(self.parameterFrame, text="algorithm").grid(row=0, column=4)
-            self.algorithm = Entry(self.parameterFrame)
-            self.algorithm.grid(row=0, column=5)
-            self.algorithm.insert(0, "auto")
+        elif algorithm == "Decision Tree":
+            submit = Button(self.parameterFrame, text="Submit", command=self.compute)
+            submit.grid(row=3, column=3)
 
-            Label(self.parameterFrame, text="leaf_size").grid(row=1, column=0)
-            self.leaf_size = Entry(self.parameterFrame)
-            self.leaf_size.grid(row=1, column=1)
-            self.leaf_size.insert(0, 30)
-
-            Label(self.parameterFrame, text="p").grid(row=1, column=2)
-            self.p = Entry(self.parameterFrame)
-            self.p.grid(row=1, column=3)
-            self.p.insert(0, 2)
-
-            Label(self.parameterFrame, text="metric").grid(row=1, column=4)
-            self.metric = Entry(self.parameterFrame)
-            self.metric.grid(row=1, column=5)
-            self.metric.insert(0, "minkowsi")
-
-            Label(self.parameterFrame, text="metric_params").grid(row=2, column=0)
-            self.metric_params = Entry(self.parameterFrame)
-            self.metric_params.grid(row=2, column=1)
-            self.metric_params.insert(0, "None")
-
-            Label(self.parameterFrame, text="n_jobs").grid(row=2, column=2)
-            self.n_jobs = Entry(self.parameterFrame)
-            self.n_jobs.grid(row=2, column=3)
-            self.n_jobs.insert(0, "None")
-
-            submit = Button(self.parameterFrame, text="Submit", command=self.knn)
-            submit.grid(row=5, column=3)
-
-    def knn(self):
+    def compute(self):
         # Feature columns
         feature_cols = list(self.df.columns.values)
         feature_cols.remove("species")
@@ -196,37 +202,39 @@ class Window(Frame):
         y = self.df['species']
 
         # Split the dataframe dataset. 70% of the data is training data and 30% is testing data using random_state 2
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=2)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=float(self.test_size.get()), random_state=int(self.random_state.get()))
 
-        # Instantiating KNN object
-        knn = KNeighborsClassifier(n_neighbors=int(self.n_neighbors.get()))
+        if self.algorithm == "K-Nearest Neighbors":
+            # Instantiating KNN object
+            knn = KNeighborsClassifier(n_neighbors=int(self.n_neighbors.get()))
 
-        # Fit method is used for creating a trained model on the training sets for KNN classifier
-        knn.fit(X_train, y_train)
+            # Fit method is used for creating a trained model on the training sets for KNN classifier
+            knn.fit(X_train, y_train)
 
-        # Predict method is used for creating a predictive model using testing set
-        y_predict_knn = knn.predict(X_test)
+            # Predict method is used for creating a predictive model using testing set
+            y_predict_knn = knn.predict(X_test)
 
-        # Accuracy of testing data on predictive model
-        knn_accuracy = accuracy_score(y_test, y_predict_knn)
+            # Accuracy of testing data on predictive model
+            self.accuracy = accuracy_score(y_test, y_predict_knn)
 
-        # Print accuracy
-        print("Accuracy for KNeighbors Classifier: " + str(knn_accuracy))
+            self.displayResult()
 
-        # Instantiating DecisionTreeClassifier object
-        my_DecisionTree = DecisionTreeClassifier(random_state=2)
 
-        # Fit method is used for creating a trained model on the training sets for decisiontreeclassifier
-        my_DecisionTree.fit(X_train, y_train)
+        elif self.algorithm == "Decision Tree":
+            # Instantiating DecisionTreeClassifier object
+            my_DecisionTree = DecisionTreeClassifier()
 
-        # Predict method is used for creating a predictive model using testing set
-        y_predict_dt = my_DecisionTree.predict(X_test)
+            # Fit method is used for creating a trained model on the training sets for decisiontreeclassifier
+            my_DecisionTree.fit(X_train, y_train)
 
-        # Accuracy of testing data on predictive model
-        dt_accuracy = accuracy_score(y_test, y_predict_dt)
+            # Predict method is used for creating a predictive model using testing set
+            y_predict_dt = my_DecisionTree.predict(X_test)
 
-        # Print accuracy
-        print("Accuracy for Decision Tree Classifier: " + str(dt_accuracy))
+            # Accuracy of testing data on predictive model
+            self.accuracy = accuracy_score(y_test, y_predict_dt)
+
+            self.displayResult()
+
 
 
     # Exit the client
