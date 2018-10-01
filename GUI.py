@@ -40,6 +40,7 @@ class Text2(Frame):
         Frame.grid(self, *args, **kwargs)
         self.grid_propagate(False)
 
+
 # Create a class that inherits from Frame class
 class Window(Frame):
 
@@ -54,6 +55,7 @@ class Window(Frame):
 
         # Run
         self.init_window()
+
 
     # Initialize window
     def init_window(self):
@@ -83,8 +85,6 @@ class Window(Frame):
         self.mainLog.text_widget.insert(END, "Started the Data Science GUI!\n")
         self.mainLog.pack()
 
-
-
     # def showImage(self):
     #     load = Image.open("chat.png")
     #     render = ImageTk.PhotoImage(load)
@@ -94,17 +94,24 @@ class Window(Frame):
     #     img.image = render
     #     img.place(x=0, y=0)
 
+
     # Display the csv file in text
     def displayFile(self):
         # Create a new frame/window from root window to display CSV file
         self.window = Toplevel(self)
-        self.window.geometry("640x480")
+        self.window.geometry("640x300")
         self.window.title(self.filename)
 
         # Adds a textbox
         # Height is the lines to show, width is the number of characters to show
-        self.sideLog = Text2(self.window, width=640, height=480)
-        self.sideLog.text_widget.insert(END, self.df)
+        self.sideLog = Text2(self.window, width=640, height=300)
+        self.sideLog.text_widget.insert(END, "Feature Matrix\n")
+        self.sideLog.text_widget.insert(END, "----------------------\n")
+        self.sideLog.text_widget.insert(END, self.X)
+        self.sideLog.text_widget.insert(END, "\n\n")
+        self.sideLog.text_widget.insert(END, "Label Vector\n")
+        self.sideLog.text_widget.insert(END, "----------------------\n")
+        self.sideLog.text_widget.insert(END, self.y)
         self.sideLog.pack()
 
     def displayResult(self):
@@ -117,18 +124,19 @@ class Window(Frame):
 
         # Create a new frame/window from root window to display CSV file
         self.window2 = Toplevel(self)
-        self.window2.geometry("640x480")
+        self.window2.geometry("640x300")
         self.window2.title("Results of " + self.filename)
 
         # Adds a textbox
         # Height is the lines to show, width is the number of characters to show
-        self.sideLog2 = Text2(self.window2, width=640, height=480)
-        self.sideLog2.text_widget.insert(END, "Accuracy for " + self.algorithm + ": " + str(self.accuracy))
+        self.sideLog2 = Text2(self.window2, width=640, height=300)
+        self.sideLog2.text_widget.insert(END, "Accuracy for " + self.algorithm + ": " + str(self.accuracy) + "\n")
+        self.sideLog2.text_widget.insert(END, self.report)
         self.sideLog2.pack()
 
 
     def openFile(self):
-        # Clear the widgets in the frame every time "Open File" is clicked
+        # Clear the widgets in the main frame every time "Open File" is clicked
         for widget in self.winfo_children():
             widget.destroy()
 
@@ -145,23 +153,68 @@ class Window(Frame):
             # Dataframe created from the file
             self.df = pd.read_csv(file, sep=',')
 
-            # Display the csv file
-            self.displayFile()
+            # Columns of dataframe
+            cols = list(self.df.columns.values)
 
-            # Option Menu for choosing machine learning algorithms
-            algorithms = ["K-Nearest Neighbors", "Decision Tree", "Random Forest", "Support Vector Machine", "Multilayer Perceptron"]
-            self.default = StringVar()
-            self.default.set("Select an algorithm.")
-            self.options = OptionMenu(self, self.default, *algorithms, command=self.selectedAlgorithm)
-            self.options.pack()
+            # Create a listbox
+            self.list_of_columns = Listbox(self, selectmode=MULTIPLE, height=5, exportselection=0)
+            self.list_of_label = Listbox(self, selectmode=SINGLE, height=5, exportselection=0)
 
-            # Parameters frame
-            self.parameterFrame = Frame(self, width=self.winfo_width()-200, height=self.winfo_height()-200)
-            self.parameterFrame.pack()
+            # Show a list of columns for user to check
+            for column in cols:
+                self.list_of_columns.insert(END, column)
+                self.list_of_label.insert(END, column)
+
+            # Display label, listbox, and button
+            Label(self, text="Select the feature columns").pack()
+            self.list_of_columns.pack()
+            Label(self, text="Select the label").pack()
+            self.list_of_label.pack()
+
+            ok = Button(self, text="Okay", command=self.setUpMatrixes)
+            ok.pack()
+
+
+    def setUpMatrixes(self):
+        # The selections of feature columns and labels
+        columns = self.list_of_columns.get(0, END)
+        indexesForFeatureCols = self.list_of_columns.curselection()
+        selected_columns = [columns[item] for item in indexesForFeatureCols]
+        indexForLabel = self.list_of_label.curselection()
+        selected_label = [columns[item] for item in indexForLabel]
+
+        # Feature matrix and label vector
+        self.X = self.df[selected_columns]
+        self.y = self.df[selected_label[0]]
+
+        # Labels
+        self.labels = self.df[selected_label[0]].unique()
+
+        # Number of features and labels
+        self.numberOfFeatures = len(selected_columns)
+        self.numberOfLabels = len(self.labels)
+
+        # Clear the widgets in the main frame
+        for widget in self.winfo_children():
+            widget.destroy()
+
+        # Option Menu for choosing machine learning algorithms
+        algorithms = ["K-Nearest Neighbors", "Decision Tree", "Random Forest", "Support Vector Machine", "Multilayer Perceptron"]
+        self.default = StringVar()
+        self.default.set("Select an algorithm.")
+        self.options = OptionMenu(self, self.default, *algorithms, command=self.selectedAlgorithm)
+        self.options.pack()
+
+        # Parameters frame
+        self.parameterFrame = Frame(self, width=self.winfo_width()-200, height=self.winfo_height()-200)
+        self.parameterFrame.pack()
+
+        # Display the csv file
+        self.displayFile()
 
 
     def selectedAlgorithm(self, algorithm):
-        # Clear the widgets in the frame every time an algorithm is selected
+        # Clear the widgets in the parameter frame when changing algorithm
         for widget in self.parameterFrame.winfo_children():
             widget.destroy()
 
@@ -183,26 +236,38 @@ class Window(Frame):
             self.n_neighbors.grid(row=0, column=5)
             self.n_neighbors.insert(0, 5)
 
-            submit = Button(self.parameterFrame, text="Submit", command=self.compute)
-            submit.grid(row=3, column=3)
-
         elif algorithm == "Decision Tree":
-            submit = Button(self.parameterFrame, text="Submit", command=self.compute)
-            submit.grid(row=3, column=3)
+            print("PLACEHOLDER")
+
+        elif algorithm == "Random Forest":
+            Label(self.parameterFrame, text="n_estimators").grid(row=0, column=4)
+            self.n_estimators = Entry(self.parameterFrame)
+            self.n_estimators.grid(row=0, column=5)
+            self.n_estimators.insert(0, 19)
+
+        elif algorithm == "Multilayer Perceptron":
+            Label(self.parameterFrame, text="max_iter").grid(row=0, column=4)
+            self.max_iter = Entry(self.parameterFrame)
+            self.max_iter.grid(row=0, column=5)
+            self.max_iter.insert(0, 100)
+
+            Label(self.parameterFrame, text="alpha").grid(row=1, column=0)
+            self.alpha = Entry(self.parameterFrame)
+            self.alpha.grid(row=1, column=1)
+            self.alpha.insert(0, 0.005)
+
+            Label(self.parameterFrame, text="hidden_layer_sizes").grid(row=1, column=2)
+            self.hidden_layer_sizes = Entry(self.parameterFrame)
+            self.hidden_layer_sizes.grid(row=1, column=3)
+            self.hidden_layer_sizes.insert(0, 2)
+
+        submit = Button(self.parameterFrame, text="Submit", command=self.compute)
+        submit.grid(row=3, column=3)
+
 
     def compute(self):
-        # Feature columns
-        feature_cols = list(self.df.columns.values)
-        feature_cols.remove("species")
-
-        # Filter the dataframe to show data from these feature columns
-        X = self.df[feature_cols]
-
-        # Create a label vector on label 'species'
-        y = self.df['species']
-
         # Split the dataframe dataset. 70% of the data is training data and 30% is testing data using random_state 2
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=float(self.test_size.get()), random_state=int(self.random_state.get()))
+        X_train, X_test, y_train, y_test = train_test_split(self.X, self.y, test_size=float(self.test_size.get()), random_state=int(self.random_state.get()))
 
         if self.algorithm == "K-Nearest Neighbors":
             # Instantiating KNN object
@@ -212,12 +277,7 @@ class Window(Frame):
             knn.fit(X_train, y_train)
 
             # Predict method is used for creating a predictive model using testing set
-            y_predict_knn = knn.predict(X_test)
-
-            # Accuracy of testing data on predictive model
-            self.accuracy = accuracy_score(y_test, y_predict_knn)
-
-            self.displayResult()
+            y_predict = knn.predict(X_test)
 
 
         elif self.algorithm == "Decision Tree":
@@ -228,14 +288,41 @@ class Window(Frame):
             my_DecisionTree.fit(X_train, y_train)
 
             # Predict method is used for creating a predictive model using testing set
-            y_predict_dt = my_DecisionTree.predict(X_test)
+            y_predict = my_DecisionTree.predict(X_test)
 
-            # Accuracy of testing data on predictive model
-            self.accuracy = accuracy_score(y_test, y_predict_dt)
+        elif self.algorithm == "Random Forest":
+            # Instantiating RandomForestClassifier object
+            my_RandomForest = RandomForestClassifier(n_estimators=int(self.n_estimators.get()), bootstrap=True)
 
-            self.displayResult()
+            # Fit method is used for creating a trained model on the training sets for RandomForestClassifier
+            my_RandomForest.fit(X_train, y_train)
+
+            # Predict method is used for creating a prediction on testing data
+            y_predict = my_RandomForest.predict(X_test)
 
 
+        elif self.algorithm == "Multilayer Perceptron":
+            # instantiate model using:
+            # a maximum of 1000 iterations (default = 200)
+            # an alpha of 1e-5 (default = 0.001)
+            # and a random state of 42 (for reproducibility)
+            my_MLP = MLPClassifier(max_iter=int(self.max_iter.get()), alpha=float(self.alpha.get()),
+                                   hidden_layer_sizes=((int((self.numberOfFeatures + self.numberOfLabels) / 2)),),
+                                   random_state=42)
+
+            # fit the model with the training set
+            my_MLP.fit(X_train, y_train)
+
+            # Predict method is used for creating a prediction on testing data
+            y_predict = my_MLP.predict(X_test)
+
+
+        # Accuracy of testing data on predictive model
+        self.accuracy = accuracy_score(y_test, y_predict)
+
+        self.report = classification_report(y_test, y_predict, target_names=self.labels)
+
+        self.displayResult()
 
     # Exit the client
     def client_exit(self):
@@ -246,7 +333,7 @@ def main():
     root = Tk()
 
     # Creates size of the window
-    root.geometry("640x480")
+    root.geometry("640x300")
 
     # Create an instance of window
     app = Window(root)
