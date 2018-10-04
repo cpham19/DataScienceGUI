@@ -105,7 +105,7 @@ class Window(Frame):
         self.sideLog.text_widget.insert(END, self.y)
         self.sideLog.pack()
 
-    def displayResult(self):
+    def displayResult(self, accuracy, accuracy_list, report):
         # Destroy if result window and log exists.
         try:
             self.window2.destroy()
@@ -121,8 +121,9 @@ class Window(Frame):
         # Adds a textbox
         # Height is the lines to show, width is the number of characters to show
         self.sideLog2 = Text2(self.window2, width=640, height=300)
-        self.sideLog2.text_widget.insert(END, "Accuracy for " + self.algorithm + ": " + str(self.accuracy) + "\n")
-        self.sideLog2.text_widget.insert(END, self.report)
+        self.sideLog2.text_widget.insert(END, "Accuracy for " + self.algorithm + ": " + str(accuracy) + "\n")
+        self.sideLog2.text_widget.insert(END, "Cross Validation for " + self.algorithm + ": " + str(accuracy_list.mean()) + "\n")
+        self.sideLog2.text_widget.insert(END, report + "\n")
         self.sideLog2.pack()
 
 
@@ -213,68 +214,44 @@ class Window(Frame):
 
         self.algorithm = algorithm
 
+        load = None
+
         if self.algorithm == "K-Nearest Neighbors":
             # Load image
             load = Image.open("knn.png")
-            load = load.resize((200, 200), Image.ANTIALIAS)
-            render = ImageTk.PhotoImage(load)
-
-            # Labels can be text or images
-            img = Label(self.parameterFrame, image=render)
-            img.image = render
-            img.pack()
 
             self.parameters["n_neighbors"] = 5
 
         elif algorithm == "Decision Tree":
             # Load image
             load = Image.open("dt.png")
-            load = load.resize((200, 200), Image.ANTIALIAS)
-            render = ImageTk.PhotoImage(load)
-
-            # Labels can be text or images
-            img = Label(self.parameterFrame, image=render)
-            img.image = render
-            img.pack()
 
         elif algorithm == "Random Forest":
             # Load image
             load = Image.open("rf.png")
-            load = load.resize((200, 200), Image.ANTIALIAS)
-            render = ImageTk.PhotoImage(load)
-
-            # Labels can be text or images
-            img = Label(self.parameterFrame, image=render)
-            img.image = render
-            img.pack()
 
             self.parameters["n_estimators"] = 5
 
         elif algorithm == "Support Vector Machine":
             # Load image
             load = Image.open("svm.png")
-            load = load.resize((200, 200), Image.ANTIALIAS)
-            render = ImageTk.PhotoImage(load)
-
-            # Labels can be text or images
-            img = Label(self.parameterFrame, image=render)
-            img.image = render
-            img.pack()
 
         elif algorithm == "Multilayer Perceptron":
             # Load image
             load = Image.open("mlp.png")
-            load = load.resize((200, 200), Image.ANTIALIAS)
-            render = ImageTk.PhotoImage(load)
-
-            # Labels can be text or images
-            img = Label(self.parameterFrame, image=render)
-            img.image = render
-            img.pack()
 
             self.parameters["max_iter"] = 100
             self.parameters["alpha"] = 0.005
             self.parameters["hidden_layer_sizes"] = 2
+
+        # Load image
+        load = load.resize((200, 200), Image.ANTIALIAS)
+        render = ImageTk.PhotoImage(load)
+
+        # Labels can be text or images
+        img = Label(self.parameterFrame, image=render)
+        img.image = render
+        img.pack()
 
         # Get the keys of the parameters dict
         self.keys = self.parameters.keys()
@@ -327,12 +304,15 @@ class Window(Frame):
         y_predict = classifier.predict(X_test)
 
         # Accuracy of testing data on predictive model
-        self.accuracy = accuracy_score(y_test, y_predict)
+        accuracy = accuracy_score(y_test, y_predict)
+
+        # Add #-fold Cross Validation with Supervised Learning
+        accuracy_list = cross_val_score(classifier, self.X, self.y, cv=10, scoring='accuracy')
 
         # Report
-        self.report = classification_report(y_test, y_predict, target_names=self.labels)
+        report = classification_report(y_test, y_predict, target_names=self.labels)
 
-        self.displayResult()
+        self.displayResult(accuracy, accuracy_list, report)
 
     # Exit the client
     def client_exit(self):
