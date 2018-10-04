@@ -85,15 +85,6 @@ class Window(Frame):
         self.mainLog.text_widget.insert(END, "Started the Data Science GUI!\n")
         self.mainLog.pack()
 
-    # def showImage(self):
-    #     load = Image.open("chat.png")
-    #     render = ImageTk.PhotoImage(load)
-    #
-    #     # labels can be text or images
-    #     img = Label(self, image=render)
-    #     img.image = render
-    #     img.place(x=0, y=0)
-
 
     # Display the csv file in text
     def displayFile(self):
@@ -166,9 +157,9 @@ class Window(Frame):
                 self.list_of_label.insert(END, column)
 
             # Display label, listbox, and button
-            Label(self, text="Select the feature columns").pack()
+            Label(self, text="Select the feature columns", relief=RIDGE).pack()
             self.list_of_columns.pack()
-            Label(self, text="Select the label").pack()
+            Label(self, text="Select the label", relief=RIDGE).pack()
             self.list_of_label.pack()
 
             ok = Button(self, text="Okay", command=self.setUpMatrixes)
@@ -218,108 +209,127 @@ class Window(Frame):
         for widget in self.parameterFrame.winfo_children():
             widget.destroy()
 
-        Label(self.parameterFrame, text="test_size").grid(row=0, column=0)
-        self.test_size = Entry(self.parameterFrame)
-        self.test_size.grid(row=0, column=1)
-        self.test_size.insert(0, 0.3)
-
-        Label(self.parameterFrame, text="random_state").grid(row=0, column=2)
-        self.random_state = Entry(self.parameterFrame)
-        self.random_state.grid(row=0, column=3)
-        self.random_state.insert(0, 2)
+        self.parameters = {"test_size":0.3, "random_state": 2}
 
         self.algorithm = algorithm
 
         if self.algorithm == "K-Nearest Neighbors":
-            Label(self.parameterFrame, text="n_neighbors").grid(row=0, column=4)
-            self.n_neighbors = Entry(self.parameterFrame)
-            self.n_neighbors.grid(row=0, column=5)
-            self.n_neighbors.insert(0, 5)
+            # Load image
+            load = Image.open("knn.png")
+            load = load.resize((200, 200), Image.ANTIALIAS)
+            render = ImageTk.PhotoImage(load)
+
+            # Labels can be text or images
+            img = Label(self.parameterFrame, image=render)
+            img.image = render
+            img.pack()
+
+            self.parameters["n_neighbors"] = 5
 
         elif algorithm == "Decision Tree":
-            print("PLACEHOLDER")
+            # Load image
+            load = Image.open("dt.png")
+            load = load.resize((200, 200), Image.ANTIALIAS)
+            render = ImageTk.PhotoImage(load)
+
+            # Labels can be text or images
+            img = Label(self.parameterFrame, image=render)
+            img.image = render
+            img.pack()
 
         elif algorithm == "Random Forest":
-            Label(self.parameterFrame, text="n_estimators").grid(row=0, column=4)
-            self.n_estimators = Entry(self.parameterFrame)
-            self.n_estimators.grid(row=0, column=5)
-            self.n_estimators.insert(0, 19)
+            # Load image
+            load = Image.open("rf.png")
+            load = load.resize((200, 200), Image.ANTIALIAS)
+            render = ImageTk.PhotoImage(load)
+
+            # Labels can be text or images
+            img = Label(self.parameterFrame, image=render)
+            img.image = render
+            img.pack()
+
+            self.parameters["n_estimators"] = 5
+
+        elif algorithm == "Support Vector Machine":
+            # Load image
+            load = Image.open("svm.png")
+            load = load.resize((200, 200), Image.ANTIALIAS)
+            render = ImageTk.PhotoImage(load)
+
+            # Labels can be text or images
+            img = Label(self.parameterFrame, image=render)
+            img.image = render
+            img.pack()
 
         elif algorithm == "Multilayer Perceptron":
-            Label(self.parameterFrame, text="max_iter").grid(row=0, column=4)
-            self.max_iter = Entry(self.parameterFrame)
-            self.max_iter.grid(row=0, column=5)
-            self.max_iter.insert(0, 100)
+            # Load image
+            load = Image.open("mlp.png")
+            load = load.resize((200, 200), Image.ANTIALIAS)
+            render = ImageTk.PhotoImage(load)
 
-            Label(self.parameterFrame, text="alpha").grid(row=1, column=0)
-            self.alpha = Entry(self.parameterFrame)
-            self.alpha.grid(row=1, column=1)
-            self.alpha.insert(0, 0.005)
+            # Labels can be text or images
+            img = Label(self.parameterFrame, image=render)
+            img.image = render
+            img.pack()
 
-            Label(self.parameterFrame, text="hidden_layer_sizes").grid(row=1, column=2)
-            self.hidden_layer_sizes = Entry(self.parameterFrame)
-            self.hidden_layer_sizes.grid(row=1, column=3)
-            self.hidden_layer_sizes.insert(0, 2)
+            self.parameters["max_iter"] = 100
+            self.parameters["alpha"] = 0.005
+            self.parameters["hidden_layer_sizes"] = 2
 
+        # Get the keys of the parameters dict
+        self.keys = self.parameters.keys()
+
+        # Place parameter labels and entries
+        for key in self.keys:
+            label = Label(self.parameterFrame, text=key, relief=RIDGE).pack()
+            entry = Entry(self.parameterFrame)
+            entry.insert(0, self.parameters[key])
+            entry.pack()
+
+        # Compute using the specified parameters
         submit = Button(self.parameterFrame, text="Submit", command=self.compute)
-        submit.grid(row=3, column=3)
+        submit.pack()
+
+        # Notify user that program is reading off the csv
+        self.mainLog.text_widget.insert(END, self.algorithm + " has been selected!\n")
 
 
     def compute(self):
         # Split the dataframe dataset. 70% of the data is training data and 30% is testing data using random_state 2
-        X_train, X_test, y_train, y_test = train_test_split(self.X, self.y, test_size=float(self.test_size.get()), random_state=int(self.random_state.get()))
+        X_train, X_test, y_train, y_test = train_test_split(self.X, self.y, test_size=float(self.parameters['test_size']), random_state=int(self.parameters['random_state']))
+
+        classifier = None
 
         if self.algorithm == "K-Nearest Neighbors":
             # Instantiating KNN object
-            knn = KNeighborsClassifier(n_neighbors=int(self.n_neighbors.get()))
-
-            # Fit method is used for creating a trained model on the training sets for KNN classifier
-            knn.fit(X_train, y_train)
-
-            # Predict method is used for creating a predictive model using testing set
-            y_predict = knn.predict(X_test)
-
-
+            classifier = KNeighborsClassifier(n_neighbors=int(self.parameters['n_neighbors']))
         elif self.algorithm == "Decision Tree":
             # Instantiating DecisionTreeClassifier object
-            my_DecisionTree = DecisionTreeClassifier()
-
-            # Fit method is used for creating a trained model on the training sets for decisiontreeclassifier
-            my_DecisionTree.fit(X_train, y_train)
-
-            # Predict method is used for creating a predictive model using testing set
-            y_predict = my_DecisionTree.predict(X_test)
-
+            classifier = DecisionTreeClassifier()
         elif self.algorithm == "Random Forest":
             # Instantiating RandomForestClassifier object
-            my_RandomForest = RandomForestClassifier(n_estimators=int(self.n_estimators.get()), bootstrap=True)
-
-            # Fit method is used for creating a trained model on the training sets for RandomForestClassifier
-            my_RandomForest.fit(X_train, y_train)
-
-            # Predict method is used for creating a prediction on testing data
-            y_predict = my_RandomForest.predict(X_test)
-
-
+            classifier = RandomForestClassifier(n_estimators=int(self.parameters['n_estimators']), bootstrap=True)
+        elif self.algorithm == "Support Vector Machine":
+            # LinearSVC classifier
+            classifier = LinearSVC()
         elif self.algorithm == "Multilayer Perceptron":
             # instantiate model using:
             # a maximum of 1000 iterations (default = 200)
             # an alpha of 1e-5 (default = 0.001)
             # and a random state of 42 (for reproducibility)
-            my_MLP = MLPClassifier(max_iter=int(self.max_iter.get()), alpha=float(self.alpha.get()),
-                                   hidden_layer_sizes=((int((self.numberOfFeatures + self.numberOfLabels) / 2)),),
-                                   random_state=42)
+            classifier = MLPClassifier(max_iter=int(self.parameters['max_iter']), alpha=float(self.parameters['alpha']),
+                                   hidden_layer_sizes=((int((self.numberOfFeatures + self.numberOfLabels) / 2)),))
 
-            # fit the model with the training set
-            my_MLP.fit(X_train, y_train)
+        # fit the model with the training set
+        classifier.fit(X_train, y_train)
 
-            # Predict method is used for creating a prediction on testing data
-            y_predict = my_MLP.predict(X_test)
-
+        # Predict method is used for creating a prediction on testing data
+        y_predict = classifier.predict(X_test)
 
         # Accuracy of testing data on predictive model
         self.accuracy = accuracy_score(y_test, y_predict)
 
+        # Report
         self.report = classification_report(y_test, y_predict, target_names=self.labels)
 
         self.displayResult()
@@ -333,7 +343,7 @@ def main():
     root = Tk()
 
     # Creates size of the window
-    root.geometry("640x300")
+    root.geometry("800x600")
 
     # Create an instance of window
     app = Window(root)
