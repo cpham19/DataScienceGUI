@@ -6,7 +6,9 @@ from tkinter import filedialog
 from os import getcwd
 import os as os
 import csv
+import math
 
+# Scikit Learn library
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
@@ -21,15 +23,34 @@ from sklearn.preprocessing import scale
 import numpy as np
 import pandas as pd
 
+# Keras/Tensorflow
+from keras.models import Sequential
+from keras.layers import Dense, Dropout, BatchNormalization
+from keras.utils import to_categorical
+
 # Create a Text widget that uses pixels for dimensions (width and height)
 # Taken from http://code.activestate.com/recipes/578887-text-widget-width-and-height-in-pixels-tkinter/
 class Text2(Frame):
     def __init__(self, master, width=0, height=0, **kwargs):
+        # Width and height for frame
         self.width = width
         self.height = height
 
+        # Initialize frame
         Frame.__init__(self, master, width=self.width, height=self.height)
+
+        # Create text
         self.text_widget = Text(self, **kwargs)
+
+        # Create scrollbar
+        self.scroll_bar = Scrollbar(self, orient="vertical")
+
+        # Connect text and scrollbar
+        self.text_widget.configure(yscrollcommand=self.scroll_bar.set)
+        self.scroll_bar.configure(command=self.text_widget.yview)
+
+        # Pack the widgets
+        self.scroll_bar.pack(side=RIGHT, fill=BOTH)
         self.text_widget.pack(expand=YES, fill=BOTH)
 
     def pack(self, *args, **kwargs):
@@ -46,7 +67,6 @@ class Window(Frame):
 
     # Initialize master widget
     def __init__(self, master=None):
-
         # Parameters sent to Frame class
         Frame.__init__(self, master)
 
@@ -59,6 +79,10 @@ class Window(Frame):
 
     # Initialize window
     def init_window(self):
+        # Width and height for window
+        self.width = 800
+        self.height = 640
+
         # Set the title of our master widget
         self.master.title("Data Science GUI")
 
@@ -81,7 +105,7 @@ class Window(Frame):
 
         # Adds a textbox at the bottom
         # Height is the lines to show, width is the number of characters to show
-        self.mainLog = Text2(self.master, width=640, height=100)
+        self.mainLog = Text2(self.master, width=self.width, height=self.height - 500)
         self.mainLog.text_widget.insert(END, "Started the Data Science GUI!\n")
         self.mainLog.pack()
 
@@ -95,21 +119,23 @@ class Window(Frame):
 
         # Adds a textbox
         # Height is the lines to show, width is the number of characters to show
-        self.sideLog = Text2(self.window, width=640, height=300)
-        self.sideLog.text_widget.insert(END, "Feature Matrix\n")
-        self.sideLog.text_widget.insert(END, "----------------------\n")
-        self.sideLog.text_widget.insert(END, self.X)
-        self.sideLog.text_widget.insert(END, "\n\n")
-        self.sideLog.text_widget.insert(END, "Label Vector\n")
-        self.sideLog.text_widget.insert(END, "----------------------\n")
-        self.sideLog.text_widget.insert(END, self.y)
-        self.sideLog.pack()
+        self.csvLog = Text2(self.window, width=self.width, height=self.height)
+        self.csvLog.text_widget.insert(END, "Feature Matrix\n")
+        self.csvLog.text_widget.insert(END, "----------------------\n")
+        self.csvLog.text_widget.insert(END, self.X)
+        self.csvLog.text_widget.insert(END, "\n\n")
+        self.csvLog.text_widget.insert(END, "Label Vector\n")
+        self.csvLog.text_widget.insert(END, "----------------------\n")
+        self.csvLog.text_widget.insert(END, self.y)
+        self.csvLog.pack()
 
-    def displayResult(self, accuracy, accuracy_list, report):
+    def displayResult(self, classifier, accuracy, accuracy_list, report):
+        self.mainLog.text_widget.insert(END, "Done computing.\n")
+
         # Destroy if result window and log exists.
         try:
             self.window2.destroy()
-            self.sideLog2.destroy()
+            self.resultLog.destroy()
         except (NameError, AttributeError):
             pass
 
@@ -120,11 +146,12 @@ class Window(Frame):
 
         # Adds a textbox
         # Height is the lines to show, width is the number of characters to show
-        self.sideLog2 = Text2(self.window2, width=640, height=300)
-        self.sideLog2.text_widget.insert(END, "Accuracy for " + self.algorithm + ": " + str(accuracy) + "\n")
-        self.sideLog2.text_widget.insert(END, "Cross Validation for " + self.algorithm + ": " + str(accuracy_list.mean()) + "\n")
-        self.sideLog2.text_widget.insert(END, report + "\n")
-        self.sideLog2.pack()
+        self.resultLog = Text2(self.window2, width=self.width, height=self.height)
+        self.resultLog.text_widget.insert(END, str(classifier) + "\n")
+        self.resultLog.text_widget.insert(END, "Accuracy for " + self.algorithm + ": " + str(accuracy) + "\n")
+        self.resultLog.text_widget.insert(END, "Cross Validation for " + self.algorithm + ": " + str(accuracy_list.mean()) + "\n")
+        self.resultLog.text_widget.insert(END, report + "\n")
+        self.resultLog.pack()
 
 
     def openFile(self):
@@ -149,17 +176,17 @@ class Window(Frame):
             cols = list(self.df.columns.values)
 
             # Create a listbox
-            self.list_of_columns = Listbox(self, selectmode=MULTIPLE, height=5, exportselection=0)
+            self.list_of_features = Listbox(self, selectmode=MULTIPLE, height=5, exportselection=0)
             self.list_of_label = Listbox(self, selectmode=SINGLE, height=5, exportselection=0)
 
             # Show a list of columns for user to check
             for column in cols:
-                self.list_of_columns.insert(END, column)
+                self.list_of_features.insert(END, column)
                 self.list_of_label.insert(END, column)
 
             # Display label, listbox, and button
             Label(self, text="Select the feature columns", relief=RIDGE).pack()
-            self.list_of_columns.pack()
+            self.list_of_features.pack()
             Label(self, text="Select the label", relief=RIDGE).pack()
             self.list_of_label.pack()
 
@@ -169,26 +196,31 @@ class Window(Frame):
 
     def setUpMatrixes(self):
         # The selections of feature columns and labels
-        columns = self.list_of_columns.get(0, END)
-        indexesForFeatureCols = self.list_of_columns.curselection()
-        selected_columns = [columns[item] for item in indexesForFeatureCols]
+        columns = self.list_of_features.get(0, END)
+        indexesForFeatureCols = self.list_of_features.curselection()
+        selected_features = [columns[item] for item in indexesForFeatureCols]
         indexForLabel = self.list_of_label.curselection()
         selected_label = [columns[item] for item in indexForLabel]
 
+        # Notify user of selected features and label
+        self.mainLog.text_widget.insert(END, "You have selected " + str(selected_features) + " as features.\n")
+        self.mainLog.text_widget.insert(END, "You have selected " + str(selected_label) + " as the label.\n")
+
         # Feature matrix and label vector
-        self.X = self.df[selected_columns]
+        self.X = self.df[selected_features]
         self.y = self.df[selected_label[0]]
 
         # Labels
         self.labels = self.df[selected_label[0]].unique()
 
         # Number of features and labels
-        self.numberOfFeatures = len(selected_columns)
+        self.numberOfFeatures = len(selected_features)
         self.numberOfLabels = len(self.labels)
 
         # Clear the widgets in the main frame
         for widget in self.winfo_children():
             widget.destroy()
+
 
         # Option Menu for choosing machine learning algorithms
         algorithms = ["K-Nearest Neighbors", "Decision Tree", "Random Forest", "Support Vector Machine", "Multilayer Perceptron"]
@@ -242,7 +274,7 @@ class Window(Frame):
 
             self.parameters["max_iter"] = 100
             self.parameters["alpha"] = 0.005
-            self.parameters["hidden_layer_sizes"] = 2
+            self.parameters["hidden_layer_sizes"] = (2,)
 
         # Load image
         load = load.resize((200, 200), Image.ANTIALIAS)
@@ -254,12 +286,21 @@ class Window(Frame):
         img.pack()
 
         # Get the keys of the parameters dict
-        self.keys = self.parameters.keys()
+        keys = self.parameters.keys()
+
+        # User input
+        self.user_input = {}
 
         # Place parameter labels and entries
-        for key in self.keys:
-            label = Label(self.parameterFrame, text=key, relief=RIDGE).pack()
-            entry = Entry(self.parameterFrame)
+        for key in keys:
+            # Label for entry
+            Label(self.parameterFrame, text=key, relief=RIDGE).pack()
+            # Variable used to store user input
+            var = StringVar()
+            # Entry text field for user input
+            entry = Entry(self.parameterFrame, textvariable=var)
+            # Add a dictionary item using parameter as key and user input as value (ex: self.user_input['test_size'] = number that user puts)
+            self.user_input[key] = var
             entry.insert(0, self.parameters[key])
             entry.pack()
 
@@ -272,20 +313,22 @@ class Window(Frame):
 
 
     def compute(self):
+        self.mainLog.text_widget.insert(END, "Computing...\n")
+
         # Split the dataframe dataset. 70% of the data is training data and 30% is testing data using random_state 2
-        X_train, X_test, y_train, y_test = train_test_split(self.X, self.y, test_size=float(self.parameters['test_size']), random_state=int(self.parameters['random_state']))
+        X_train, X_test, y_train, y_test = train_test_split(self.X, self.y, test_size=float(self.user_input['test_size'].get()), random_state=int(self.user_input['random_state'].get()))
 
         classifier = None
 
         if self.algorithm == "K-Nearest Neighbors":
             # Instantiating KNN object
-            classifier = KNeighborsClassifier(n_neighbors=int(self.parameters['n_neighbors']))
+            classifier = KNeighborsClassifier(n_neighbors=int(self.user_input['n_neighbors'].get()))
         elif self.algorithm == "Decision Tree":
             # Instantiating DecisionTreeClassifier object
             classifier = DecisionTreeClassifier()
         elif self.algorithm == "Random Forest":
             # Instantiating RandomForestClassifier object
-            classifier = RandomForestClassifier(n_estimators=int(self.parameters['n_estimators']), bootstrap=True)
+            classifier = RandomForestClassifier(n_estimators=int(self.user_input['n_estimators'].get()), bootstrap=True)
         elif self.algorithm == "Support Vector Machine":
             # LinearSVC classifier
             classifier = LinearSVC()
@@ -294,8 +337,9 @@ class Window(Frame):
             # a maximum of 1000 iterations (default = 200)
             # an alpha of 1e-5 (default = 0.001)
             # and a random state of 42 (for reproducibility)
-            classifier = MLPClassifier(max_iter=int(self.parameters['max_iter']), alpha=float(self.parameters['alpha']),
-                                   hidden_layer_sizes=((int((self.numberOfFeatures + self.numberOfLabels) / 2)),))
+            classifier = MLPClassifier(max_iter=int(self.user_input['max_iter'].get()), alpha=float(self.user_input['alpha'].get()),
+                                   hidden_layer_sizes=self.user_input['hidden_layer_sizes'].get())
+
 
         # fit the model with the training set
         classifier.fit(X_train, y_train)
@@ -312,7 +356,7 @@ class Window(Frame):
         # Report
         report = classification_report(y_test, y_predict, target_names=self.labels)
 
-        self.displayResult(accuracy, accuracy_list, report)
+        self.displayResult(classifier, accuracy, accuracy_list, report)
 
     # Exit the client
     def client_exit(self):

@@ -2,8 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="5a25da15-5493-405e-a971-68e380c0297b" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/Python GUI.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Python GUI.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/GUI.py" beforeDir="false" afterPath="$PROJECT_DIR$/GUI.py" afterDir="false" />
     </list>
@@ -17,24 +15,24 @@
     <session id="1601922970">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="7" />
-          <entry key="project.open.time.3" value="1" />
+          <entry key="project.closed" value="10" />
+          <entry key="project.open.time.3" value="2" />
           <entry key="project.open.time.31" value="1" />
           <entry key="project.open.time.4" value="3" />
-          <entry key="project.open.time.6" value="2" />
-          <entry key="project.opened" value="7" />
+          <entry key="project.open.time.6" value="4" />
+          <entry key="project.opened" value="10" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
           <entry key="csv" value="4" />
-          <entry key="py" value="4188" />
+          <entry key="py" value="6136" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
           <entry key="CSV" value="4" />
-          <entry key="Python" value="4188" />
+          <entry key="Python" value="6136" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
@@ -55,8 +53,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/GUI.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="229">
-              <caret line="277" column="19" selection-start-line="277" selection-start-column="19" selection-end-line="277" selection-end-column="19" />
+            <state relative-caret-position="142">
+              <caret line="288" column="37" lean-forward="true" selection-start-line="288" selection-start-column="37" selection-end-line="288" selection-end-column="37" />
               <folding>
                 <element signature="e#128#149#0" expanded="true" />
               </folding>
@@ -77,9 +75,20 @@
     <findStrings>
       <find>file</find>
       <find>Started</find>
+      <find>self.X</find>
+      <find>list_of_columns</find>
+      <find>sideLog2</find>
+      <find>sideLog</find>
+      <find>se</find>
+      <find>selected_columns</find>
+      <find>self.keys</find>
     </findStrings>
     <replaceStrings>
       <replace>fileMenu</replace>
+      <replace>resultLog</replace>
+      <replace>csvLog</replace>
+      <replace>selected_features</replace>
+      <replace>keys</replace>
     </replaceStrings>
   </component>
   <component name="Git.Settings">
@@ -94,10 +103,10 @@
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="370" />
-    <option name="y" value="25" />
-    <option name="width" value="1400" />
-    <option name="height" value="964" />
+    <option name="x" value="384" />
+    <option name="y" value="55" />
+    <option name="width" value="1401" />
+    <option name="height" value="1002" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
@@ -165,14 +174,14 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="370" y="25" width="1400" height="964" extended-state="0" />
+    <frame x="384" y="55" width="1401" height="1002" extended-state="0" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" weight="0.25" />
       <window_info id="Structure" order="1" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info anchor="bottom" id="Run" order="2" weight="0.26474127" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.21058688" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -199,8 +208,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/GUI.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="229">
-          <caret line="277" column="19" selection-start-line="277" selection-start-column="19" selection-end-line="277" selection-end-column="19" />
+        <state relative-caret-position="142">
+          <caret line="288" column="37" lean-forward="true" selection-start-line="288" selection-start-column="37" selection-end-line="288" selection-end-column="37" />
           <folding>
             <element signature="e#128#149#0" expanded="true" />
           </folding>
