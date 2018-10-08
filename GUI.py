@@ -236,13 +236,25 @@ class Window(Frame):
         # Display the csv file
         self.displayFile()
 
-
     def selectedAlgorithm(self, algorithm):
         # Clear the widgets in the parameter frame when changing algorithm
         for widget in self.parameterFrame.winfo_children():
             widget.destroy()
 
-        self.parameters = {"test_size":0.3, "random_state": 2}
+        # Validation command
+        # %d = Type of action (1=insert, 0=delete, -1 for others)
+        # %P = value of the entry if the edit is allowed (key, focusin, focusout, forced)
+        vcmd = (self.register(self.testVal), '%d', '%P')
+
+        Label(self.parameterFrame, text="test_size", relief=RIDGE).pack()
+        self.test_size = Entry(self.parameterFrame, validate = "key", validatecommand=vcmd)
+        self.test_size.insert(0, 0.3)
+        self.test_size.pack()
+
+        Label(self.parameterFrame, text="random_state", relief=RIDGE).pack()
+        self.random_state = Entry(self.parameterFrame, validate="key", validatecommand=vcmd)
+        self.random_state.insert(0, 2)
+        self.random_state.pack()
 
         self.algorithm = algorithm
 
@@ -252,7 +264,19 @@ class Window(Frame):
             # Load image
             load = Image.open("knn.png")
 
-            self.parameters["n_neighbors"] = 5
+            # Load image
+            load = load.resize((200, 200), Image.ANTIALIAS)
+            render = ImageTk.PhotoImage(load)
+
+            # Labels can be text or images
+            img = Label(self.parameterFrame, image=render)
+            img.image = render
+            img.pack()
+
+            Label(self.parameterFrame, text="n_neighbors", relief=RIDGE).pack()
+            self.n_neighbors = Entry(self.parameterFrame, validate="key", validatecommand=vcmd)
+            self.n_neighbors.insert(0, 5)
+            self.n_neighbors.pack()
 
         elif algorithm == "Decision Tree":
             # Load image
@@ -262,47 +286,61 @@ class Window(Frame):
             # Load image
             load = Image.open("rf.png")
 
-            self.parameters["n_estimators"] = 5
+            # Load image
+            load = load.resize((200, 200), Image.ANTIALIAS)
+            render = ImageTk.PhotoImage(load)
+
+            # Labels can be text or images
+            img = Label(self.parameterFrame, image=render)
+            img.image = render
+            img.pack()
+
+            Label(self.parameterFrame, text="n_estimators", relief=RIDGE).pack()
+            self.n_estimators = Entry(self.parameterFrame, validate="key", validatecommand=vcmd)
+            self.n_estimators.insert(0, 19)
+            self.n_estimators.pack()
 
         elif algorithm == "Support Vector Machine":
             # Load image
             load = Image.open("svm.png")
 
+            # Load image
+            load = load.resize((200, 200), Image.ANTIALIAS)
+            render = ImageTk.PhotoImage(load)
+
+            # Labels can be text or images
+            img = Label(self.parameterFrame, image=render)
+            img.image = render
+            img.pack()
+
+
         elif algorithm == "Multilayer Perceptron":
             # Load image
             load = Image.open("mlp.png")
+            # Load image
+            load = load.resize((200, 200), Image.ANTIALIAS)
+            render = ImageTk.PhotoImage(load)
 
-            self.parameters["max_iter"] = 100
-            self.parameters["alpha"] = 0.005
-            self.parameters["hidden_layer_sizes"] = (2,)
+            # Labels can be text or images
+            img = Label(self.parameterFrame, image=render)
+            img.image = render
+            img.pack()
 
-        # Load image
-        load = load.resize((200, 200), Image.ANTIALIAS)
-        render = ImageTk.PhotoImage(load)
+            Label(self.parameterFrame, text="max_iter", relief=RIDGE).pack()
+            self.max_iter = Entry(self.parameterFrame, validate="key", validatecommand=vcmd)
+            self.max_iter.insert(0, 100)
+            self.max_iter.pack()
 
-        # Labels can be text or images
-        img = Label(self.parameterFrame, image=render)
-        img.image = render
-        img.pack()
+            Label(self.parameterFrame, text="alpha", relief=RIDGE).pack()
+            self.alpha = Entry(self.parameterFrame, validate="key", validatecommand=vcmd)
+            self.alpha.insert(0, 0.005)
+            self.alpha.pack()
 
-        # Get the keys of the parameters dict
-        keys = self.parameters.keys()
+            Label(self.parameterFrame, text="hidden_layer_sizes", relief=RIDGE).pack()
+            self.hidden_layer_sizes = Entry(self.parameterFrame, validate="key", validatecommand=vcmd)
+            self.hidden_layer_sizes.insert(0, 2)
+            self.hidden_layer_sizes.pack()
 
-        # User input
-        self.user_input = {}
-
-        # Place parameter labels and entries
-        for key in keys:
-            # Label for entry
-            Label(self.parameterFrame, text=key, relief=RIDGE).pack()
-            # Variable used to store user input
-            var = StringVar()
-            # Entry text field for user input
-            entry = Entry(self.parameterFrame, textvariable=var)
-            # Add a dictionary item using parameter as key and user input as value (ex: self.user_input['test_size'] = number that user puts)
-            self.user_input[key] = var
-            entry.insert(0, self.parameters[key])
-            entry.pack()
 
         # Compute using the specified parameters
         submit = Button(self.parameterFrame, text="Submit", command=self.compute)
@@ -311,24 +349,30 @@ class Window(Frame):
         # Notify user that program is reading off the csv
         self.mainLog.text_widget.insert(END, self.algorithm + " has been selected!\n")
 
+    def testVal(self, inStr, acttyp):
+        if acttyp == '1':  # insert
+            if not inStr.isdigit():
+                self.bell()
+                return False
+        return True
 
     def compute(self):
         self.mainLog.text_widget.insert(END, "Computing...\n")
 
-        # Split the dataframe dataset. 70% of the data is training data and 30% is testing data using random_state 2
-        X_train, X_test, y_train, y_test = train_test_split(self.X, self.y, test_size=float(self.user_input['test_size'].get()), random_state=int(self.user_input['random_state'].get()))
+        # Split the dataframe dataset.
+        X_train, X_test, y_train, y_test = train_test_split(self.X, self.y, test_size=float(0.3), random_state=int(2))
 
         classifier = None
 
         if self.algorithm == "K-Nearest Neighbors":
             # Instantiating KNN object
-            classifier = KNeighborsClassifier(n_neighbors=int(self.user_input['n_neighbors'].get()))
+            classifier = KNeighborsClassifier(n_neighbors=int(5))
         elif self.algorithm == "Decision Tree":
             # Instantiating DecisionTreeClassifier object
             classifier = DecisionTreeClassifier()
         elif self.algorithm == "Random Forest":
             # Instantiating RandomForestClassifier object
-            classifier = RandomForestClassifier(n_estimators=int(self.user_input['n_estimators'].get()), bootstrap=True)
+            classifier = RandomForestClassifier(n_estimators=int(19), bootstrap=True)
         elif self.algorithm == "Support Vector Machine":
             # LinearSVC classifier
             classifier = LinearSVC()
@@ -337,8 +381,8 @@ class Window(Frame):
             # a maximum of 1000 iterations (default = 200)
             # an alpha of 1e-5 (default = 0.001)
             # and a random state of 42 (for reproducibility)
-            classifier = MLPClassifier(max_iter=int(self.user_input['max_iter'].get()), alpha=float(self.user_input['alpha'].get()),
-                                   hidden_layer_sizes=self.user_input['hidden_layer_sizes'].get())
+            classifier = MLPClassifier(max_iter=int(1000), alpha=float(0.005),
+                                   hidden_layer_sizes=(2))
 
 
         # fit the model with the training set
