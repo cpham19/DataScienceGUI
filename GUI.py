@@ -3,6 +3,7 @@
 from tkinter import *
 from PIL import Image, ImageTk
 from tkinter import filedialog
+from tkinter import messagebox
 from os import getcwd
 import os as os
 import csv
@@ -243,18 +244,27 @@ class Window(Frame):
 
         # Validation command
         # %d = Type of action (1=insert, 0=delete, -1 for others)
-        # %P = value of the entry if the edit is allowed (key, focusin, focusout, forced)
-        vcmd = (self.register(self.testVal), '%d', '%P')
+        # %P = value of the entry if the edit is allowed (all, focusin, focusout, forced)
+        vcmd = (self.parameterFrame.register(self.validateInteger),
+                '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
+        vcmd2 = (self.parameterFrame.register(self.validateFloat),
+                '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
 
         Label(self.parameterFrame, text="test_size", relief=RIDGE).pack()
-        self.test_size = Entry(self.parameterFrame, validate = "key", validatecommand=vcmd)
+        self.test_size = Entry(self.parameterFrame, validate = "all", validatecommand=vcmd2)
         self.test_size.insert(0, 0.3)
         self.test_size.pack()
 
         Label(self.parameterFrame, text="random_state", relief=RIDGE).pack()
-        self.random_state = Entry(self.parameterFrame, validate="key", validatecommand=vcmd)
+        self.random_state = Entry(self.parameterFrame, validate="all", validatecommand=vcmd)
         self.random_state.insert(0, 2)
         self.random_state.pack()
+
+        Label(self.parameterFrame, text="cv", relief=RIDGE).pack()
+        self.cv = Entry(self.parameterFrame, validate="all", validatecommand=vcmd)
+        self.cv.insert(0, 10)
+        self.cv.pack()
+
 
         self.algorithm = algorithm
 
@@ -274,13 +284,22 @@ class Window(Frame):
             img.pack()
 
             Label(self.parameterFrame, text="n_neighbors", relief=RIDGE).pack()
-            self.n_neighbors = Entry(self.parameterFrame, validate="key", validatecommand=vcmd)
+            self.n_neighbors = Entry(self.parameterFrame, validate="all", validatecommand=vcmd)
             self.n_neighbors.insert(0, 5)
             self.n_neighbors.pack()
 
         elif algorithm == "Decision Tree":
             # Load image
             load = Image.open("dt.png")
+
+            # Load image
+            load = load.resize((200, 200), Image.ANTIALIAS)
+            render = ImageTk.PhotoImage(load)
+
+            # Labels can be text or images
+            img = Label(self.parameterFrame, image=render)
+            img.image = render
+            img.pack()
 
         elif algorithm == "Random Forest":
             # Load image
@@ -296,7 +315,7 @@ class Window(Frame):
             img.pack()
 
             Label(self.parameterFrame, text="n_estimators", relief=RIDGE).pack()
-            self.n_estimators = Entry(self.parameterFrame, validate="key", validatecommand=vcmd)
+            self.n_estimators = Entry(self.parameterFrame, validate="all", validatecommand=vcmd)
             self.n_estimators.insert(0, 19)
             self.n_estimators.pack()
 
@@ -327,17 +346,17 @@ class Window(Frame):
             img.pack()
 
             Label(self.parameterFrame, text="max_iter", relief=RIDGE).pack()
-            self.max_iter = Entry(self.parameterFrame, validate="key", validatecommand=vcmd)
+            self.max_iter = Entry(self.parameterFrame, validate="all", validatecommand=vcmd)
             self.max_iter.insert(0, 100)
             self.max_iter.pack()
 
             Label(self.parameterFrame, text="alpha", relief=RIDGE).pack()
-            self.alpha = Entry(self.parameterFrame, validate="key", validatecommand=vcmd)
+            self.alpha = Entry(self.parameterFrame, validate="all", validatecommand=vcmd2)
             self.alpha.insert(0, 0.005)
             self.alpha.pack()
 
             Label(self.parameterFrame, text="hidden_layer_sizes", relief=RIDGE).pack()
-            self.hidden_layer_sizes = Entry(self.parameterFrame, validate="key", validatecommand=vcmd)
+            self.hidden_layer_sizes = Entry(self.parameterFrame, validate="all", validatecommand=vcmd)
             self.hidden_layer_sizes.insert(0, 2)
             self.hidden_layer_sizes.pack()
 
@@ -349,30 +368,55 @@ class Window(Frame):
         # Notify user that program is reading off the csv
         self.mainLog.text_widget.insert(END, self.algorithm + " has been selected!\n")
 
-    def testVal(self, inStr, acttyp):
-        if acttyp == '1':  # insert
-            if not inStr.isdigit():
-                self.bell()
-                return False
-        return True
+    def validateInteger(self, d, i, P, s, S, v, V, W):
+        # print("end", "OnValidate:\n")
+        # print("end", "d='%s'\n" % d)
+        # print("end", "i='%s'\n" % i)
+        # print("end", "P='%s'\n" % P)
+        # print("end", "s='%s'\n" % s)
+        # print("end", "S='%s'\n" % S)
+        # print("end", "v='%s'\n" % v)
+        # print("end", "V='%s'\n" % V)
+        # print("end", "W='%s'\n" % W)
+
+        # Accept Integer values and empty string (for erasing the one only number)
+        if P.isdigit() or P == "":
+            return True
+        else:
+            self.mainLog.text_widget.insert(END, "Please enter an integer.\n")
+            self.bell()
+            return False
+
+    def validateFloat(self, d, i, P, s, S, v, V, W):
+        # Accept Float values and empty string (for erasing the one only number)
+        if P == "":
+            return True
+
+        try:
+            float(P)
+            return True
+        except ValueError:
+            self.mainLog.text_widget.insert(END, "Float numbers are only allowed (ex: 0.3 or .3)!\n")
+            self.bell()
+            return False
 
     def compute(self):
         self.mainLog.text_widget.insert(END, "Computing...\n")
 
         # Split the dataframe dataset.
-        X_train, X_test, y_train, y_test = train_test_split(self.X, self.y, test_size=float(0.3), random_state=int(2))
+        X_train, X_test, y_train, y_test = train_test_split(self.X, self.y, test_size=float(0.3), random_state=int(self.random_state.get()))
 
         classifier = None
 
         if self.algorithm == "K-Nearest Neighbors":
             # Instantiating KNN object
-            classifier = KNeighborsClassifier(n_neighbors=int(5))
+            classifier = KNeighborsClassifier(n_neighbors=int(self.n_neighbors.get()))
         elif self.algorithm == "Decision Tree":
             # Instantiating DecisionTreeClassifier object
             classifier = DecisionTreeClassifier()
         elif self.algorithm == "Random Forest":
             # Instantiating RandomForestClassifier object
-            classifier = RandomForestClassifier(n_estimators=int(19), bootstrap=True)
+            classifier = RandomForestClassifier(n_estimators=int(self.n_estimators.get()), bootstrap=True)
         elif self.algorithm == "Support Vector Machine":
             # LinearSVC classifier
             classifier = LinearSVC()
@@ -381,7 +425,7 @@ class Window(Frame):
             # a maximum of 1000 iterations (default = 200)
             # an alpha of 1e-5 (default = 0.001)
             # and a random state of 42 (for reproducibility)
-            classifier = MLPClassifier(max_iter=int(1000), alpha=float(0.005),
+            classifier = MLPClassifier(max_iter=int(self.max_iter.get()), alpha=float(self.alpha.get()),
                                    hidden_layer_sizes=(2))
 
 
@@ -395,7 +439,7 @@ class Window(Frame):
         accuracy = accuracy_score(y_test, y_predict)
 
         # Add #-fold Cross Validation with Supervised Learning
-        accuracy_list = cross_val_score(classifier, self.X, self.y, cv=10, scoring='accuracy')
+        accuracy_list = cross_val_score(classifier, self.X, self.y, cv=int(self.cv.get()), scoring='accuracy')
 
         # Report
         report = classification_report(y_test, y_predict, target_names=self.labels)
