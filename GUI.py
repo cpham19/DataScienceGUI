@@ -66,17 +66,16 @@ class Text2(Frame):
 # Create a class that inherits from Frame class
 class Window(Frame):
 
-    # Initialize master widget
+    # Initialize PanedWindow widget
     def __init__(self, master=None):
         # Parameters sent to Frame class
-        Frame.__init__(self, master)
+        PanedWindow.__init__(self, master)
 
         # Reference to master widget (tk window)
         self.master = master
 
         # Run
         self.init_window()
-
 
     # Initialize window
     def init_window(self):
@@ -89,6 +88,13 @@ class Window(Frame):
 
         # Allows the widget to take the full space of the root window
         self.pack(fill=BOTH, expand=1)
+
+        # Adds a textbox at the bottom
+        # Height is the lines to show, width is the number of characters to show
+        self.mainLog = Text2(self.master, width=self.width, height=self.height - 500)
+        self.mainLog.text_widget.insert(END, "Started the Data Science GUI!\n")
+        self.mainLog.text_widget.see("end")
+        self.mainLog.pack()
 
         # Creates a menu instance
         menu = Menu(self.master)
@@ -103,12 +109,6 @@ class Window(Frame):
 
         # Adds the options to the menu
         menu.add_cascade(label="File", menu=fileMenu)
-
-        # Adds a textbox at the bottom
-        # Height is the lines to show, width is the number of characters to show
-        self.mainLog = Text2(self.master, width=self.width, height=self.height - 500)
-        self.mainLog.text_widget.insert(END, "Started the Data Science GUI!\n")
-        self.mainLog.pack()
 
 
     # Display the csv file in text
@@ -128,10 +128,13 @@ class Window(Frame):
         self.csvLog.text_widget.insert(END, "Label Vector\n")
         self.csvLog.text_widget.insert(END, "----------------------\n")
         self.csvLog.text_widget.insert(END, self.y)
+        self.csvLog.text_widget.see("end")
         self.csvLog.pack()
 
-    def displayResult(self, classifier, accuracy, accuracy_list, report):
+
+    def displayResult(self, dict):
         self.mainLog.text_widget.insert(END, "Done computing.\n")
+        self.mainLog.text_widget.see("end")
 
         # Destroy if result window and log exists.
         try:
@@ -148,11 +151,34 @@ class Window(Frame):
         # Adds a textbox
         # Height is the lines to show, width is the number of characters to show
         self.resultLog = Text2(self.window2, width=self.width, height=self.height)
-        self.resultLog.text_widget.insert(END, str(classifier) + "\n")
-        self.resultLog.text_widget.insert(END, "Accuracy for " + self.algorithm + ": " + str(accuracy) + "\n")
-        self.resultLog.text_widget.insert(END, "Cross Validation for " + self.algorithm + ": " + str(accuracy_list.mean()) + "\n")
-        self.resultLog.text_widget.insert(END, report + "\n")
+        self.resultLog.text_widget.insert(END, "Training Set Size: " + str(dict["train_size"]) + "\n")
+        self.resultLog.text_widget.insert(END, "Testing Set Size: " + str(dict["test_size"]) + "\n")
+        self.resultLog.text_widget.insert(END, "Training Set Shape: " + str(dict["X_train.shape"]) + "\n")
+        self.resultLog.text_widget.insert(END, "Testing Set Shape: " + str(dict["X_test.shape"]) + "\n")
+        self.resultLog.text_widget.insert(END, str(dict["classifier"]) + "\n")
+        self.resultLog.text_widget.insert(END, "Accuracy for " + self.algorithm + ": " + str(dict["accuracy"]) + "\n")
+        self.resultLog.text_widget.insert(END, "Cross Validation for " + self.algorithm + ": " + str(dict["accuracy_list"].mean()) + "\n")
+        self.resultLog.text_widget.insert(END, dict["report"] + "\n")
+        self.resultLog.text_widget.see("end")
         self.resultLog.pack()
+
+    def removeFeatures(self, event):
+        # Note here that Tkinter passes an event object
+        w = event.widget
+
+        # Indexes of selected features
+        indexes = w.curselection()
+
+        # Columns of dataframe
+        cols = list(self.df.columns.values)
+
+        selected_features = [cols[item] for item in indexes]
+
+        self.list_of_label.delete(0, END)
+
+        for col in cols:
+            if col not in selected_features:
+                self.list_of_label.insert(0, col)
 
 
     def openFile(self):
@@ -169,6 +195,7 @@ class Window(Frame):
 
             # Notify user that program is reading off the csv
             self.mainLog.text_widget.insert(END, "Reading '" + self.filename + "' from '" + file + "'.\n")
+            self.mainLog.text_widget.see("end")
 
             # Dataframe created from the file
             self.df = pd.read_csv(file, sep=',')
@@ -178,6 +205,7 @@ class Window(Frame):
 
             # Create a listbox
             self.list_of_features = Listbox(self, selectmode=MULTIPLE, height=5, exportselection=0)
+            self.list_of_features.bind('<<ListboxSelect>>', self.removeFeatures)
             self.list_of_label = Listbox(self, selectmode=SINGLE, height=5, exportselection=0)
 
             # Show a list of columns for user to check
@@ -200,19 +228,19 @@ class Window(Frame):
         columns = self.list_of_features.get(0, END)
         indexesForFeatureCols = self.list_of_features.curselection()
         selected_features = [columns[item] for item in indexesForFeatureCols]
-        indexForLabel = self.list_of_label.curselection()
-        selected_label = [columns[item] for item in indexForLabel]
+        selected_label = self.list_of_label.get(ANCHOR)
 
         # Notify user of selected features and label
         self.mainLog.text_widget.insert(END, "You have selected " + str(selected_features) + " as features.\n")
         self.mainLog.text_widget.insert(END, "You have selected " + str(selected_label) + " as the label.\n")
+        self.mainLog.text_widget.see("end")
 
         # Feature matrix and label vector
         self.X = self.df[selected_features]
-        self.y = self.df[selected_label[0]]
+        self.y = self.df[selected_label]
 
         # Labels
-        self.labels = self.df[selected_label[0]].unique()
+        self.labels = self.df[selected_label].unique()
 
         # Number of features and labels
         self.numberOfFeatures = len(selected_features)
@@ -221,7 +249,6 @@ class Window(Frame):
         # Clear the widgets in the main frame
         for widget in self.winfo_children():
             widget.destroy()
-
 
         # Option Menu for choosing machine learning algorithms
         algorithms = ["K-Nearest Neighbors", "Decision Tree", "Random Forest", "Support Vector Machine", "Multilayer Perceptron"]
@@ -245,121 +272,72 @@ class Window(Frame):
         # Validation command
         # %d = Type of action (1=insert, 0=delete, -1 for others)
         # %P = value of the entry if the edit is allowed (all, focusin, focusout, forced)
-        vcmd = (self.parameterFrame.register(self.validateInteger),
-                '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
-        vcmd2 = (self.parameterFrame.register(self.validateFloat),
-                '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
+        vcmdForInt = (self.parameterFrame.register(self.validateInt),
+                      '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
+        vcmdForFloat = (self.parameterFrame.register(self.validateFloat),
+                        '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
+        vcmdForFloat2 = (self.parameterFrame.register(self.validateFloat2),
+                         '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
+        vcmdForHiddenLayerSizes = (self.parameterFrame.register(self.validateHiddenLayerSizes),
+                         '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
+
+        self.algorithm = algorithm
+
+        # Load image
+        load = Image.open(algorithm + ".png")
+
+        # Load image
+        load = load.resize((200, 200), Image.ANTIALIAS)
+        render = ImageTk.PhotoImage(load)
+
+        # Labels can be text or images
+        img = Label(self.parameterFrame, image=render)
+        img.image = render
+        img.pack()
 
         Label(self.parameterFrame, text="test_size", relief=RIDGE).pack()
-        self.test_size = Entry(self.parameterFrame, validate = "all", validatecommand=vcmd2)
+        self.test_size = Entry(self.parameterFrame, validate="all", validatecommand=vcmdForFloat)
         self.test_size.insert(0, 0.3)
         self.test_size.pack()
 
         Label(self.parameterFrame, text="random_state", relief=RIDGE).pack()
-        self.random_state = Entry(self.parameterFrame, validate="all", validatecommand=vcmd)
+        self.random_state = Entry(self.parameterFrame, validate="all", validatecommand=vcmdForInt)
         self.random_state.insert(0, 2)
         self.random_state.pack()
 
         Label(self.parameterFrame, text="cv", relief=RIDGE).pack()
-        self.cv = Entry(self.parameterFrame, validate="all", validatecommand=vcmd)
+        self.cv = Entry(self.parameterFrame, validate="all", validatecommand=vcmdForInt)
         self.cv.insert(0, 10)
         self.cv.pack()
 
 
-        self.algorithm = algorithm
-
-        load = None
-
         if self.algorithm == "K-Nearest Neighbors":
-            # Load image
-            load = Image.open("knn.png")
-
-            # Load image
-            load = load.resize((200, 200), Image.ANTIALIAS)
-            render = ImageTk.PhotoImage(load)
-
-            # Labels can be text or images
-            img = Label(self.parameterFrame, image=render)
-            img.image = render
-            img.pack()
-
             Label(self.parameterFrame, text="n_neighbors", relief=RIDGE).pack()
-            self.n_neighbors = Entry(self.parameterFrame, validate="all", validatecommand=vcmd)
+            self.n_neighbors = Entry(self.parameterFrame, validate="all", validatecommand=vcmdForInt)
             self.n_neighbors.insert(0, 5)
             self.n_neighbors.pack()
 
-        elif algorithm == "Decision Tree":
-            # Load image
-            load = Image.open("dt.png")
-
-            # Load image
-            load = load.resize((200, 200), Image.ANTIALIAS)
-            render = ImageTk.PhotoImage(load)
-
-            # Labels can be text or images
-            img = Label(self.parameterFrame, image=render)
-            img.image = render
-            img.pack()
-
         elif algorithm == "Random Forest":
-            # Load image
-            load = Image.open("rf.png")
-
-            # Load image
-            load = load.resize((200, 200), Image.ANTIALIAS)
-            render = ImageTk.PhotoImage(load)
-
-            # Labels can be text or images
-            img = Label(self.parameterFrame, image=render)
-            img.image = render
-            img.pack()
-
             Label(self.parameterFrame, text="n_estimators", relief=RIDGE).pack()
-            self.n_estimators = Entry(self.parameterFrame, validate="all", validatecommand=vcmd)
+            self.n_estimators = Entry(self.parameterFrame, validate="all", validatecommand=vcmdForInt)
             self.n_estimators.insert(0, 19)
             self.n_estimators.pack()
 
-        elif algorithm == "Support Vector Machine":
-            # Load image
-            load = Image.open("svm.png")
-
-            # Load image
-            load = load.resize((200, 200), Image.ANTIALIAS)
-            render = ImageTk.PhotoImage(load)
-
-            # Labels can be text or images
-            img = Label(self.parameterFrame, image=render)
-            img.image = render
-            img.pack()
-
-
         elif algorithm == "Multilayer Perceptron":
-            # Load image
-            load = Image.open("mlp.png")
-            # Load image
-            load = load.resize((200, 200), Image.ANTIALIAS)
-            render = ImageTk.PhotoImage(load)
-
-            # Labels can be text or images
-            img = Label(self.parameterFrame, image=render)
-            img.image = render
-            img.pack()
-
             Label(self.parameterFrame, text="max_iter", relief=RIDGE).pack()
-            self.max_iter = Entry(self.parameterFrame, validate="all", validatecommand=vcmd)
+            self.max_iter = Entry(self.parameterFrame, validate="all", validatecommand=vcmdForInt)
             self.max_iter.insert(0, 100)
             self.max_iter.pack()
 
             Label(self.parameterFrame, text="alpha", relief=RIDGE).pack()
-            self.alpha = Entry(self.parameterFrame, validate="all", validatecommand=vcmd2)
+            self.alpha = Entry(self.parameterFrame, validate="all", validatecommand=vcmdForFloat2)
             self.alpha.insert(0, 0.005)
             self.alpha.pack()
 
             Label(self.parameterFrame, text="hidden_layer_sizes", relief=RIDGE).pack()
-            self.hidden_layer_sizes = Entry(self.parameterFrame, validate="all", validatecommand=vcmd)
+            self.hidden_layer_sizes = Entry(self.parameterFrame, validate="all", validatecommand=vcmdForHiddenLayerSizes)
             self.hidden_layer_sizes.insert(0, 2)
             self.hidden_layer_sizes.pack()
-
 
         # Compute using the specified parameters
         submit = Button(self.parameterFrame, text="Submit", command=self.compute)
@@ -367,23 +345,25 @@ class Window(Frame):
 
         # Notify user that program is reading off the csv
         self.mainLog.text_widget.insert(END, self.algorithm + " has been selected!\n")
+        self.mainLog.text_widget.see("end")
 
-    def validateInteger(self, d, i, P, s, S, v, V, W):
-        # print("end", "OnValidate:\n")
-        # print("end", "d='%s'\n" % d)
-        # print("end", "i='%s'\n" % i)
-        # print("end", "P='%s'\n" % P)
-        # print("end", "s='%s'\n" % s)
-        # print("end", "S='%s'\n" % S)
-        # print("end", "v='%s'\n" % v)
-        # print("end", "V='%s'\n" % V)
-        # print("end", "W='%s'\n" % W)
+    def validateInt(self, d, i, P, s, S, v, V, W):
+        print("end", "OnValidate:\n")
+        print("end", "d='%s'\n" % d)
+        print("end", "i='%s'\n" % i)
+        print("end", "P='%s'\n" % P)
+        print("end", "s='%s'\n" % s)
+        print("end", "S='%s'\n" % S)
+        print("end", "v='%s'\n" % v)
+        print("end", "V='%s'\n" % V)
+        print("end", "W='%s'\n" % W)
 
         # Accept Integer values and empty string (for erasing the one only number)
         if P.isdigit() or P == "":
             return True
         else:
             self.mainLog.text_widget.insert(END, "Please enter an integer.\n")
+            self.mainLog.text_widget.see("end")
             self.bell()
             return False
 
@@ -393,15 +373,67 @@ class Window(Frame):
             return True
 
         try:
-            float(P)
-            return True
+            number = float(P)
+
+            if (0.0 <= number and number <= 1.0):
+                return True
+            else:
+                self.mainLog.text_widget.insert(END, "Float numbers must be between 0.0 and 1.0 (inclusive)!\n")
+                self.mainLog.text_widget.see("end")
+                self.bell()
+                return False
         except ValueError:
             self.mainLog.text_widget.insert(END, "Float numbers are only allowed (ex: 0.3 or .3)!\n")
+            self.mainLog.text_widget.see("end")
             self.bell()
             return False
 
+    def validateFloat2(self, d, i, P, s, S, v, V, W):
+        # Accept Float values and empty string (for erasing the one only number)
+        if P == "":
+            return True
+
+        try:
+            number = float(P)
+
+            if (0.00001 <= number and number <= 1000.0):
+                return True
+            else:
+                self.mainLog.text_widget.insert(END, "Float numbers must be between 0.00001 and 1000.0 (inclusive)!\n")
+                self.mainLog.text_widget.see("end")
+                self.bell()
+                return False
+        except ValueError:
+            self.mainLog.text_widget.insert(END, "Float numbers are only allowed (ex: 0.00001 or .00001)!\n")
+            self.mainLog.text_widget.see("end")
+            self.bell()
+            return False
+
+    def validateHiddenLayerSizes(self, d, i, P, s, S, v, V, W):
+        # Accept Float values and empty string (for erasing the one only number)
+        if P == "":
+            return True
+
+        try:
+            hidden_layer_sizes = P.split(",")
+
+            if S.isdigit() or S == "," :
+                return True
+            else:
+                self.mainLog.text_widget.insert(END, "Hidden layer sizes should be separated by commas (ex: 2,3,4). This means there are 2 nodes in first hidden layer, 3 nodes in second hidden layer, and 4 nodes in the third hidden layer.!\n")
+                self.mainLog.text_widget.see("end")
+                self.bell()
+                return False
+        except ValueError:
+            self.mainLog.text_widget.insert(END, "Hidden layer sizes should be separated by commas (ex: 2,3,4). This means there are 2 nodes in first hidden layer, 3 nodes in second hidden layer, and 4 nodes in the third hidden layer.!\n")
+            self.mainLog.text_widget.see("end")
+            self.bell()
+            return False
+
+
     def compute(self):
         self.mainLog.text_widget.insert(END, "Computing...\n")
+        self.mainLog.text_widget.see("end")
 
         # Split the dataframe dataset.
         X_train, X_test, y_train, y_test = train_test_split(self.X, self.y, test_size=float(0.3), random_state=int(self.random_state.get()))
@@ -425,9 +457,18 @@ class Window(Frame):
             # a maximum of 1000 iterations (default = 200)
             # an alpha of 1e-5 (default = 0.001)
             # and a random state of 42 (for reproducibility)
-            classifier = MLPClassifier(max_iter=int(self.max_iter.get()), alpha=float(self.alpha.get()),
-                                   hidden_layer_sizes=(2))
 
+            # Turn the string (containing commas) into a list
+            modified_hidden_layer_sizes = self.hidden_layer_sizes.get().split(",")
+
+            # Remove any empty string in the list
+            modified_hidden_layer_sizes = [item.strip() for item in modified_hidden_layer_sizes if item.strip()]
+
+            # Turn the list of strings into a tuple of int
+            modified_hidden_layer_sizes = tuple([int(i) for i in modified_hidden_layer_sizes])
+
+            classifier = MLPClassifier(max_iter=int(self.max_iter.get()), alpha=float(self.alpha.get()),
+                                   hidden_layer_sizes=modified_hidden_layer_sizes)
 
         # fit the model with the training set
         classifier.fit(X_train, y_train)
@@ -444,7 +485,10 @@ class Window(Frame):
         # Report
         report = classification_report(y_test, y_predict, target_names=self.labels)
 
-        self.displayResult(classifier, accuracy, accuracy_list, report)
+        # Dictionary containing information
+        dict = {"train_size": 1.00 - float(self.test_size.get()), "test_size": float(self.test_size.get()), "X_train.shape": X_train.shape, "X_test.shape": X_test.shape, "classifier": classifier, "accuracy": accuracy, "accuracy_list": accuracy_list, "report": report}
+
+        self.displayResult(dict)
 
     # Exit the client
     def client_exit(self):
