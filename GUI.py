@@ -62,43 +62,30 @@ class Text2(Frame):
         Frame.grid(self, *args, **kwargs)
         self.grid_propagate(False)
 
+    def delete(self):
+        self.text_widget.delete(1.0, END)
 
-# Create a class that inherits from Frame class
-class Window(Frame):
 
+# Create a Window Class
+class Window:
     # Initialize PanedWindow widget
-    def __init__(self, master=None):
-        # Parameters sent to Frame class
-        PanedWindow.__init__(self, master)
+    def __init__(self):
+        # Creates the root window
+        self.root = Tk()
 
-        # Reference to master widget (tk window)
-        self.master = master
-
-        # Run
-        self.init_window()
-
-    # Initialize window
-    def init_window(self):
-        # Width and height for window
-        self.width = 800
-        self.height = 640
+        # Creates size of the window
+        self.root.geometry("1000x600")
 
         # Set the title of our master widget
-        self.master.title("Data Science GUI")
+        self.root.title("Data Science GUI")
 
-        # Allows the widget to take the full space of the root window
-        self.pack(fill=BOTH, expand=1)
-
-        # Adds a textbox at the bottom
-        # Height is the lines to show, width is the number of characters to show
-        self.mainLog = Text2(self.master, width=self.width, height=self.height - 500)
-        self.mainLog.text_widget.insert(END, "Started the Data Science GUI!\n")
-        self.mainLog.text_widget.see("end")
-        self.mainLog.pack()
+        # Width and height for window
+        self.width = 1000
+        self.height = 600
 
         # Creates a menu instance
-        menu = Menu(self.master)
-        self.master.config(menu = menu)
+        menu = Menu(self.root)
+        self.root.config(menu = menu)
 
         # Creates a file object for "File" option
         # Adds several commands to the "File" option
@@ -110,17 +97,69 @@ class Window(Frame):
         # Adds the options to the menu
         menu.add_cascade(label="File", menu=fileMenu)
 
+        # Paned window for Top (main stuff) and Bottom (mainLog)
+        main = PanedWindow(self.root, orient=VERTICAL, sashpad=1, sashrelief=RAISED)
+        main.pack(fill=BOTH, expand=1)
+
+        # Paned window for left (choosing features/label and parameters/algorithm) and right (displaying csv log and results log)
+        top = PanedWindow(main, orient=HORIZONTAL, sashpad=1, sashrelief=RAISED)
+
+        # Log for main stuff
+        bottom = PanedWindow(main, orient=HORIZONTAL, sashpad=1, sashrelief=RAISED)
+
+        # Adds top and bototm panedwindows
+        main.add(top, height=440)
+        main.add(bottom, height=200)
+
+        # Paned Window for choosing features/label and parameters/algorithm
+        left = PanedWindow(top, orient=HORIZONTAL, sashpad=1, sashrelief=RAISED)
+
+        # LabelFrame for Main Frame
+        labelFrameForMainFrame = LabelFrame(left, text="Main Frame")
+        self.selection_frame = Frame(labelFrameForMainFrame)
+        self.selection_frame.pack()
+
+        left.add(labelFrameForMainFrame)
+
+        # Paned window for CSV File and Results
+        right = PanedWindow(top, orient=VERTICAL, sashpad=1, sashrelief=RAISED)
+
+        # Add left and right panedwindows
+        top.add(left, width=500)
+        top.add(right, width=300)
+
+        # LabelFrame for CSV log
+        self.labelFrameForCSVFile = LabelFrame(top, text="CSV not specified")
+        # Log for CSV file
+        self.csvLog = Text2(self.labelFrameForCSVFile, width=self.width, height=self.height - 300)
+        self.csvLog.pack()
+
+        # LabelFrame for Results log
+        self.labelFrameForResult = LabelFrame(top, text="results not specified")
+        # Log for Results
+        self.resultLog = Text2(self.labelFrameForResult, width=self.width, height=self.height - 300)
+        self.resultLog.pack()
+
+        # Add the two labelframes for displaying CSV file and Result Log
+        right.add(self.labelFrameForCSVFile, height=220)
+        right.add(self.labelFrameForResult, height=220)
+
+        # Labelframe for Main log
+        labelFrameForMainLog = LabelFrame(bottom, text="Main log")
+        # Log for main frame
+        self.mainLog = Text2(labelFrameForMainLog, width=self.width, height=self.height - 100)
+        self.mainLog.text_widget.insert(END, "Started the Data Science GUI!\n")
+        self.mainLog.text_widget.see("end")
+        self.mainLog.pack()
+
+        # Add Labelframe for main log
+        bottom.add(labelFrameForMainLog)
+
+        self.root.mainloop()
+
 
     # Display the csv file in text
     def displayFile(self):
-        # Create a new frame/window from root window to display CSV file
-        self.window = Toplevel(self)
-        self.window.geometry("640x300")
-        self.window.title(self.filename)
-
-        # Adds a textbox
-        # Height is the lines to show, width is the number of characters to show
-        self.csvLog = Text2(self.window, width=self.width, height=self.height)
         self.csvLog.text_widget.insert(END, "Feature Matrix\n")
         self.csvLog.text_widget.insert(END, "----------------------\n")
         self.csvLog.text_widget.insert(END, self.X)
@@ -129,28 +168,15 @@ class Window(Frame):
         self.csvLog.text_widget.insert(END, "----------------------\n")
         self.csvLog.text_widget.insert(END, self.y)
         self.csvLog.text_widget.see("end")
-        self.csvLog.pack()
 
 
     def displayResult(self, dict):
         self.mainLog.text_widget.insert(END, "Done computing.\n")
         self.mainLog.text_widget.see("end")
 
-        # Destroy if result window and log exists.
-        try:
-            self.window2.destroy()
-            self.resultLog.destroy()
-        except (NameError, AttributeError):
-            pass
+        self.resultLog.delete()
+        self.labelFrameForResult.config(text="Results for " + self.filename)
 
-        # Create a new frame/window from root window to display CSV file
-        self.window2 = Toplevel(self)
-        self.window2.geometry("640x300")
-        self.window2.title("Results of " + self.filename)
-
-        # Adds a textbox
-        # Height is the lines to show, width is the number of characters to show
-        self.resultLog = Text2(self.window2, width=self.width, height=self.height)
         self.resultLog.text_widget.insert(END, "Training Set Size: " + str(dict["train_size"]) + "\n")
         self.resultLog.text_widget.insert(END, "Testing Set Size: " + str(dict["test_size"]) + "\n")
         self.resultLog.text_widget.insert(END, "Training Set Shape: " + str(dict["X_train.shape"]) + "\n")
@@ -160,7 +186,6 @@ class Window(Frame):
         self.resultLog.text_widget.insert(END, "Cross Validation for " + self.algorithm + ": " + str(dict["accuracy_list"].mean()) + "\n")
         self.resultLog.text_widget.insert(END, dict["report"] + "\n")
         self.resultLog.text_widget.see("end")
-        self.resultLog.pack()
 
     def removeFeatures(self, event):
         # Note here that Tkinter passes an event object
@@ -182,10 +207,6 @@ class Window(Frame):
 
 
     def openFile(self):
-        # Clear the widgets in the main frame every time "Open File" is clicked
-        for widget in self.winfo_children():
-            widget.destroy()
-
         # The full path of the file
         file = filedialog.askopenfilename(initialdir = getcwd(), title = "Select file",filetypes = (("csv files","*.csv"),))
 
@@ -197,6 +218,20 @@ class Window(Frame):
             self.mainLog.text_widget.insert(END, "Reading '" + self.filename + "' from '" + file + "'.\n")
             self.mainLog.text_widget.see("end")
 
+            # Clear the selection_Frame
+            # Clear the widgets in the selection frame after you selected features and labels
+            for widget in self.selection_frame.winfo_children():
+                widget.destroy()
+
+            # Change LabelFrame text to filename
+            self.labelFrameForCSVFile.config(text=self.filename)
+
+            # Clear the CSV log
+            self.csvLog.delete()
+
+            # Clear Results log
+            self.resultLog.delete()
+
             # Dataframe created from the file
             self.df = pd.read_csv(file, sep=',')
 
@@ -204,9 +239,9 @@ class Window(Frame):
             cols = list(self.df.columns.values)
 
             # Create a listbox
-            self.list_of_features = Listbox(self, selectmode=MULTIPLE, height=5, exportselection=0)
+            self.list_of_features = Listbox(self.selection_frame, selectmode=MULTIPLE, height=5, exportselection=0)
             self.list_of_features.bind('<<ListboxSelect>>', self.removeFeatures)
-            self.list_of_label = Listbox(self, selectmode=SINGLE, height=5, exportselection=0)
+            self.list_of_label = Listbox(self.selection_frame, selectmode=SINGLE, height=5, exportselection=0)
 
             # Show a list of columns for user to check
             for column in cols:
@@ -214,12 +249,13 @@ class Window(Frame):
                 self.list_of_label.insert(END, column)
 
             # Display label, listbox, and button
-            Label(self, text="Select the feature columns", relief=RIDGE).pack()
+            Label(self.selection_frame, text="Select the feature columns", relief=RIDGE).pack()
             self.list_of_features.pack()
-            Label(self, text="Select the label", relief=RIDGE).pack()
+
+            Label(self.selection_frame, text="Select the label", relief=RIDGE).pack()
             self.list_of_label.pack()
 
-            ok = Button(self, text="Okay", command=self.setUpMatrixes)
+            ok = Button(self.selection_frame, text="Okay", command=self.setUpMatrixes)
             ok.pack()
 
 
@@ -229,6 +265,10 @@ class Window(Frame):
         indexesForFeatureCols = self.list_of_features.curselection()
         selected_features = [columns[item] for item in indexesForFeatureCols]
         selected_label = self.list_of_label.get(ANCHOR)
+
+        # Clear the widgets in the selection frame after you selected features and labels
+        for widget in self.selection_frame.winfo_children():
+            widget.destroy()
 
         # Notify user of selected features and label
         self.mainLog.text_widget.insert(END, "You have selected " + str(selected_features) + " as features.\n")
@@ -246,39 +286,40 @@ class Window(Frame):
         self.numberOfFeatures = len(selected_features)
         self.numberOfLabels = len(self.labels)
 
-        # Clear the widgets in the main frame
-        for widget in self.winfo_children():
-            widget.destroy()
-
         # Option Menu for choosing machine learning algorithms
-        algorithms = ["K-Nearest Neighbors", "Decision Tree", "Random Forest", "Support Vector Machine", "Multilayer Perceptron"]
+        algorithms = ["K-Nearest Neighbors", "Decision Tree", "Random Forest", "Support Vector Machine",
+                          "Multilayer Perceptron"]
         self.default = StringVar()
         self.default.set("Select an algorithm.")
-        self.options = OptionMenu(self, self.default, *algorithms, command=self.selectedAlgorithm)
+        self.options = OptionMenu(self.selection_frame, self.default, *algorithms, command=self.selectedAlgorithm)
         self.options.pack()
-
-        # Parameters frame
-        self.parameterFrame = Frame(self, width=self.winfo_width()-200, height=self.winfo_height()-200)
-        self.parameterFrame.pack()
 
         # Display the csv file
         self.displayFile()
 
     def selectedAlgorithm(self, algorithm):
-        # Clear the widgets in the parameter frame when changing algorithm
-        for widget in self.parameterFrame.winfo_children():
+        # Clear the widgets in the selection frame when changing algorithm
+        for widget in self.selection_frame.winfo_children():
             widget.destroy()
+
+        # Option Menu for choosing machine learning algorithms
+        algorithms = ["K-Nearest Neighbors", "Decision Tree", "Random Forest", "Support Vector Machine",
+                          "Multilayer Perceptron"]
+        self.default = StringVar()
+        self.default.set(algorithm)
+        self.options = OptionMenu(self.selection_frame, self.default, *algorithms, command=self.selectedAlgorithm)
+        self.options.pack()
 
         # Validation command
         # %d = Type of action (1=insert, 0=delete, -1 for others)
         # %P = value of the entry if the edit is allowed (all, focusin, focusout, forced)
-        vcmdForInt = (self.parameterFrame.register(self.validateInt),
+        vcmdForInt = (self.selection_frame.register(self.validateInt),
                       '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
-        vcmdForFloat = (self.parameterFrame.register(self.validateFloat),
+        vcmdForFloat = (self.selection_frame.register(self.validateFloat),
                         '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
-        vcmdForFloat2 = (self.parameterFrame.register(self.validateFloat2),
+        vcmdForFloat2 = (self.selection_frame.register(self.validateFloat2),
                          '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
-        vcmdForHiddenLayerSizes = (self.parameterFrame.register(self.validateHiddenLayerSizes),
+        vcmdForHiddenLayerSizes = (self.selection_frame.register(self.validateHiddenLayerSizes),
                          '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
 
         self.algorithm = algorithm
@@ -287,60 +328,60 @@ class Window(Frame):
         load = Image.open(algorithm + ".png")
 
         # Load image
-        load = load.resize((200, 200), Image.ANTIALIAS)
+        load = load.resize((100, 100), Image.ANTIALIAS)
         render = ImageTk.PhotoImage(load)
 
         # Labels can be text or images
-        img = Label(self.parameterFrame, image=render)
+        img = Label(self.selection_frame, image=render)
         img.image = render
         img.pack()
 
-        Label(self.parameterFrame, text="test_size", relief=RIDGE).pack()
-        self.test_size = Entry(self.parameterFrame, validate="all", validatecommand=vcmdForFloat)
+        Label(self.selection_frame, text="test_size", relief=RIDGE).pack()
+        self.test_size = Entry(self.selection_frame, validate="all", validatecommand=vcmdForFloat)
         self.test_size.insert(0, 0.3)
         self.test_size.pack()
 
-        Label(self.parameterFrame, text="random_state", relief=RIDGE).pack()
-        self.random_state = Entry(self.parameterFrame, validate="all", validatecommand=vcmdForInt)
+        Label(self.selection_frame, text="random_state", relief=RIDGE).pack()
+        self.random_state = Entry(self.selection_frame, validate="all", validatecommand=vcmdForInt)
         self.random_state.insert(0, 2)
         self.random_state.pack()
 
-        Label(self.parameterFrame, text="cv", relief=RIDGE).pack()
-        self.cv = Entry(self.parameterFrame, validate="all", validatecommand=vcmdForInt)
+        Label(self.selection_frame, text="cv", relief=RIDGE).pack()
+        self.cv = Entry(self.selection_frame, validate="all", validatecommand=vcmdForInt)
         self.cv.insert(0, 10)
         self.cv.pack()
 
 
         if self.algorithm == "K-Nearest Neighbors":
-            Label(self.parameterFrame, text="n_neighbors", relief=RIDGE).pack()
-            self.n_neighbors = Entry(self.parameterFrame, validate="all", validatecommand=vcmdForInt)
+            Label(self.selection_frame, text="n_neighbors", relief=RIDGE).pack()
+            self.n_neighbors = Entry(self.selection_frame, validate="all", validatecommand=vcmdForInt)
             self.n_neighbors.insert(0, 5)
             self.n_neighbors.pack()
 
         elif algorithm == "Random Forest":
-            Label(self.parameterFrame, text="n_estimators", relief=RIDGE).pack()
-            self.n_estimators = Entry(self.parameterFrame, validate="all", validatecommand=vcmdForInt)
+            Label(self.selection_frame, text="n_estimators", relief=RIDGE).pack()
+            self.n_estimators = Entry(self.selection_frame, validate="all", validatecommand=vcmdForInt)
             self.n_estimators.insert(0, 19)
             self.n_estimators.pack()
 
         elif algorithm == "Multilayer Perceptron":
-            Label(self.parameterFrame, text="max_iter", relief=RIDGE).pack()
-            self.max_iter = Entry(self.parameterFrame, validate="all", validatecommand=vcmdForInt)
+            Label(self.selection_frame, text="max_iter", relief=RIDGE).pack()
+            self.max_iter = Entry(self.selection_frame, validate="all", validatecommand=vcmdForInt)
             self.max_iter.insert(0, 100)
             self.max_iter.pack()
 
-            Label(self.parameterFrame, text="alpha", relief=RIDGE).pack()
-            self.alpha = Entry(self.parameterFrame, validate="all", validatecommand=vcmdForFloat2)
+            Label(self.selection_frame, text="alpha", relief=RIDGE).pack()
+            self.alpha = Entry(self.selection_frame, validate="all", validatecommand=vcmdForFloat2)
             self.alpha.insert(0, 0.005)
             self.alpha.pack()
 
-            Label(self.parameterFrame, text="hidden_layer_sizes", relief=RIDGE).pack()
-            self.hidden_layer_sizes = Entry(self.parameterFrame, validate="all", validatecommand=vcmdForHiddenLayerSizes)
+            Label(self.selection_frame, text="hidden_layer_sizes", relief=RIDGE).pack()
+            self.hidden_layer_sizes = Entry(self.selection_frame, validate="all", validatecommand=vcmdForHiddenLayerSizes)
             self.hidden_layer_sizes.insert(0, 2)
             self.hidden_layer_sizes.pack()
 
         # Compute using the specified parameters
-        submit = Button(self.parameterFrame, text="Submit", command=self.compute)
+        submit = Button(self.selection_frame, text="Submit", command=self.compute)
         submit.pack()
 
         # Notify user that program is reading off the csv
@@ -494,18 +535,10 @@ class Window(Frame):
     def client_exit(self):
         exit()
 
+
 def main():
-    # Creates the root window
-    root = Tk()
-
-    # Creates size of the window
-    root.geometry("800x600")
-
     # Create an instance of window
-    app = Window(root)
-
-    # Show the window
-    root.mainloop()
+    app = Window()
 
 
 if __name__ == '__main__':
