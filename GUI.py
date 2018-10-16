@@ -84,8 +84,8 @@ class Window:
         self.root.title("Data Science GUI")
 
         # Width and height for window
-        self.width = 1000
-        self.height = 600
+        self.width = 1280
+        self.height = 720
 
         # Creates a menu instance
         menu = Menu(self.root)
@@ -296,9 +296,9 @@ class Window:
             cols = list(self.df.columns.values)
 
             # Create a listbox
-            self.list_of_features = Listbox(self.mainFrame, selectmode=MULTIPLE, height=5, exportselection=0)
+            self.list_of_features = Listbox(self.mainFrame, selectmode=MULTIPLE, width=30, height=10, exportselection=0)
             self.list_of_features.bind('<<ListboxSelect>>', self.removeFeatures)
-            self.list_of_label = Listbox(self.mainFrame, selectmode=SINGLE, height=5, exportselection=0)
+            self.list_of_label = Listbox(self.mainFrame, selectmode=SINGLE, width=30, height=10, exportselection=0)
 
             # Show a list of columns for user to check
             for column in cols:
@@ -501,7 +501,7 @@ class Window:
             self.paramDesc["link"] = "https:////keras.io/models/sequential/"
             self.paramDesc["epochs"] = "Integer.\nNumber of epochs to train the model. An epoch is an iteration over the entire x and y data provided. Note that in conjunction with initial_epoch,  epochs is to be understood as 'final epoch'. The model is not trained for a number of iterations given by epochs, but merely until the epoch of index epochs is reached."
             self.paramDesc["batch_size"] = " Integer or None.\nNumber of samples per gradient update. If unspecified, batch_size will default to 32."
-            self.paramDesc['validation_split'] = "Float between 0 and 1. Fraction of the training data to be used as validation data. The model will set apart this fraction of the training data, will not train on it, and will evaluate the loss and any model metrics on this data at the end of each epoch. The validation data is selected from the last samples in the x and y data provided, before shuffling."
+            self.paramDesc['validation_split'] = "Float between 0 and 1.\nFraction of the training data to be used as validation data. The model will set apart this fraction of the training data, will not train on it, and will evaluate the loss and any model metrics on this data at the end of each epoch. The validation data is selected from the last samples in the x and y data provided, before shuffling."
 
         # Compute using the specified parameters
         submit = Button(self.mainFrame, text="Submit", command=self.compute)
@@ -563,7 +563,7 @@ class Window:
         try:
             number = float(P)
 
-            if (0.00001 <= number and number <= 1000.0):
+            if (0.0 <= number and number <= 1000.0):
                 return True
             else:
                 self.mainLog.text_widget.insert(END, "Float numbers must be between 0.00001 and 1000.0 (inclusive)!\n")
@@ -585,7 +585,7 @@ class Window:
         try:
             hidden_layer_sizes = P.split(",")
 
-            if S.isdigit() or S == "," :
+            if S.isdigit() or S == "," or S == "" :
                 return True
             else:
                 self.mainLog.text_widget.insert(END, "Hidden layer sizes should be separated by commas (ex: 2,3,4). This means there are 2 nodes in first hidden layer, 3 nodes in second hidden layer, and 4 nodes in the third hidden layer.!\n")
@@ -603,12 +603,13 @@ class Window:
         self.mainLog.text_widget.insert(END, "Computing...\n")
         self.mainLog.text_widget.see("end")
 
-        # Split the dataframe dataset.
-        X_train, X_test, y_train, y_test = train_test_split(self.X, self.y, test_size=float(0.3), random_state=int(self.random_state.get()))
-
         classifier = None
 
         if (self.algorithm != "Keras"):
+            # Split the dataframe dataset.
+            X_train, X_test, y_train, y_test = train_test_split(self.X, self.y, test_size=float(0.3),
+                                                                random_state=int(self.random_state.get()))
+
             if self.algorithm == "K-Nearest Neighbors":
                 # Instantiating KNN object
                 classifier = KNeighborsClassifier(n_neighbors=int(self.n_neighbors.get()))
@@ -654,8 +655,8 @@ class Window:
             # Add #-fold Cross Validation with Supervised Learning
             accuracy_list = cross_val_score(classifier, self.X, self.y, cv=int(self.cv.get()), scoring='accuracy')
 
-            # Report
-            report = classification_report(y_test, y_predict, target_names=self.labels)
+            # # Report
+            # report = classification_report(y_test, y_predict, target_names=self.labels)
 
             # Dictionary containing information
             dict = {"Training Set Size": 1.00 - float(self.test_size.get()),
@@ -664,8 +665,7 @@ class Window:
                     "Testing Set Shape": X_test.shape,
                     "Classifier": classifier,
                     "Accuracy for " + self.algorithm : str(accuracy),
-                    "Cross Validation for " + self.algorithm : accuracy_list.mean(),
-                    "Report": report}
+                    "Cross Validation for " + self.algorithm : accuracy_list.mean()}
 
         elif self.algorithm == "Keras":
             # Make numpy arrays from X and y dataframe
@@ -690,7 +690,7 @@ class Window:
             model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
             # Fit the model
-            history = model.fit(X, Y, epochs=self.epochs.get(), batch_size=self.batch_size.get(), validation_split=self.validation_split.get()).history
+            history = model.fit(X, Y, epochs=int(self.epochs.get()), batch_size=int(self.batch_size.get()), validation_split=float(self.validation_split.get())).history
 
             # Dictionary containing information
             dict = {"Epochs": self.epochs.get(),
