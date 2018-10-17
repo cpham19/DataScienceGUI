@@ -395,28 +395,29 @@ class Window:
         img.pack()
 
         self.paramDesc = {}
+        parameters = []
 
-        if (self.algorithm != "Keras"):
-            Label(self.mainFrame, text="test_size", relief=RIDGE).pack()
-            self.test_size = Entry(self.mainFrame, validate="all", validatecommand=vcmdForFloat)
-            self.test_size.insert(0, 0.3)
-            self.test_size.pack()
+        Label(self.mainFrame, text="test_size", relief=RIDGE).pack()
+        self.test_size = Entry(self.mainFrame, validate="all", validatecommand=vcmdForFloat)
+        self.test_size.insert(0, 0.3)
+        self.test_size.pack()
+        parameters.append(self.test_size)
 
-            self.paramDesc["test_size"] = "float, int or None, optional (default=0.25)\nIf float, should be between 0.0 and 1.0 and represent the proportion of the dataset to include in the test split. If int, represents the absolute number of test samples. If None, the value is set to the complement of the train size. By default, the value is set to 0.25. The default will change in version 0.21. It will remain 0.25 only if train_size is unspecified, otherwise it will complement the specified train_size."
+        Label(self.mainFrame, text="random_state", relief=RIDGE).pack()
+        self.random_state = Entry(self.mainFrame, validate="all", validatecommand=vcmdForInt)
+        self.random_state.insert(0, 2)
+        self.random_state.pack()
+        parameters.append(self.random_state)
 
-            Label(self.mainFrame, text="random_state", relief=RIDGE).pack()
-            self.random_state = Entry(self.mainFrame, validate="all", validatecommand=vcmdForInt)
-            self.random_state.insert(0, 2)
-            self.random_state.pack()
+        Label(self.mainFrame, text="cv", relief=RIDGE).pack()
+        self.cv = Entry(self.mainFrame, validate="all", validatecommand=vcmdForInt)
+        self.cv.insert(0, 10)
+        self.cv.pack()
+        parameters.append(self.cv)
 
-            self.paramDesc["random_state"] = "int, RandomState instance or None, optional (default=None)\nIf int, random_state is the seed used by the random number generator; If RandomState instance, random_state is the random number generator; If None, the random number generator is the RandomState instance used by np.random."
-
-            Label(self.mainFrame, text="cv", relief=RIDGE).pack()
-            self.cv = Entry(self.mainFrame, validate="all", validatecommand=vcmdForInt)
-            self.cv.insert(0, 10)
-            self.cv.pack()
-
-            self.paramDesc["cv"] = " int, cross-validation generator or an iterable, optional\nDetermines the cross-validation splitting strategy. Possible inputs for cv are:\nNone, to use the default 3-fold cross validation,\ninteger, to specify the number of folds in a (Stratified)KFold,\nAn object to be used as a cross-validation generator.\nAn iterable yielding train, test splits."
+        self.paramDesc["test_size"] = "float, int or None, optional (default=0.25)\nIf float, should be between 0.0 and 1.0 and represent the proportion of the dataset to include in the test split. If int, represents the absolute number of test samples. If None, the value is set to the complement of the train size. By default, the value is set to 0.25. The default will change in version 0.21. It will remain 0.25 only if train_size is unspecified, otherwise it will complement the specified train_size."
+        self.paramDesc["random_state"] = "int, RandomState instance or None, optional (default=None)\nIf int, random_state is the seed used by the random number generator; If RandomState instance, random_state is the random number generator; If None, the random number generator is the RandomState instance used by np.random."
+        self.paramDesc["cv"] = " int, cross-validation generator or an iterable, optional\nDetermines the cross-validation splitting strategy. Possible inputs for cv are:\nNone, to use the default 3-fold cross validation,\ninteger, to specify the number of folds in a (Stratified)KFold,\nAn object to be used as a cross-validation generator.\nAn iterable yielding train, test splits."
 
 
         if self.algorithm == "K-Nearest Neighbors":
@@ -424,6 +425,7 @@ class Window:
             self.n_neighbors = Entry(self.mainFrame, validate="all", validatecommand=vcmdForInt)
             self.n_neighbors.insert(0, 5)
             self.n_neighbors.pack()
+            parameters.append(self.n_neighbors)
 
             self.paramDesc["link"] = "https:////scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsClassifier.html"
             self.paramDesc["n_neighbors"] = "int, optional (default = 5)\nNumber of neighbors to use by default for kneighbors queries."
@@ -436,6 +438,7 @@ class Window:
             self.n_estimators = Entry(self.mainFrame, validate="all", validatecommand=vcmdForInt)
             self.n_estimators.insert(0, 19)
             self.n_estimators.pack()
+            parameters.append(self.n_estimators)
 
             self.paramDesc["link"] = "https:////scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html"
             self.paramDesc["n_estimators"] = "integer, optional (default=10)\nThe number of trees in the forest."
@@ -451,11 +454,13 @@ class Window:
             self.c = Entry(self.mainFrame, validate="all", validatecommand=vcmdForFloat2)
             self.c.insert(0, 1.0)
             self.c.pack()
+            parameters.append(self.c)
 
             Label(self.mainFrame, text="max_iter", relief=RIDGE).pack()
             self.max_iter = Entry(self.mainFrame, validate="all", validatecommand=vcmdForInt)
             self.max_iter.insert(0, 100)
             self.max_iter.pack()
+            parameters.append(self.max_iter)
 
             self.paramDesc["link"] = "https:////scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html"
             self.paramDesc["C"] = "float, optional (default=1.0)\nPenalty parameter C of the error term."
@@ -466,16 +471,19 @@ class Window:
             self.max_iter = Entry(self.mainFrame, validate="all", validatecommand=vcmdForInt)
             self.max_iter.insert(0, 100)
             self.max_iter.pack()
+            parameters.append(self.max_iter)
 
             Label(self.mainFrame, text="alpha", relief=RIDGE).pack()
             self.alpha = Entry(self.mainFrame, validate="all", validatecommand=vcmdForFloat2)
             self.alpha.insert(0, 0.005)
             self.alpha.pack()
+            parameters.append(self.alpha)
 
             Label(self.mainFrame, text="hidden_layer_sizes", relief=RIDGE).pack()
             self.hidden_layer_sizes = Entry(self.mainFrame, validate="all", validatecommand=vcmdForHiddenLayerSizes)
             self.hidden_layer_sizes.insert(0, 2)
             self.hidden_layer_sizes.pack()
+            parameters.append(self.hidden_layer_sizes)
 
             self.paramDesc["link"] = "https:////scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html"
             self.paramDesc["max_iter"] = "int, (default=1000)\nThe maximum number of iterations to be run."
@@ -483,28 +491,39 @@ class Window:
             self.paramDesc["hidden_layer_sizes"] = "tuple, length = n_layers - 2, default (100,)\nThe ith element represents the number of neurons in the ith hidden layer."
 
         elif algorithm == "Keras":
+            Label(self.mainFrame, text="Number of hidden layers", relief=RIDGE).pack()
+            self.numberOfHiddenLayers = Entry(self.mainFrame, validate="all", validatecommand=vcmdForInt)
+            self.numberOfHiddenLayers.insert(0, 1)
+            self.numberOfHiddenLayers.pack()
+            parameters.append(self.numberOfHiddenLayers)
+
+            Label(self.mainFrame, text="Hidden layer sizes", relief=RIDGE).pack()
+            self.hidden_layer_sizes = Entry(self.mainFrame, validate="all", validatecommand=vcmdForHiddenLayerSizes)
+            self.hidden_layer_sizes.insert(0, 2)
+            self.hidden_layer_sizes.pack()
+            parameters.append(self.hidden_layer_sizes)
+
             Label(self.mainFrame, text="epochs", relief=RIDGE).pack()
             self.epochs = Entry(self.mainFrame, validate="all", validatecommand=vcmdForInt)
             self.epochs.insert(0, 200)
             self.epochs.pack()
+            parameters.append(self.epochs)
 
             Label(self.mainFrame, text="batch_size", relief=RIDGE).pack()
             self.batch_size = Entry(self.mainFrame, validate="all", validatecommand=vcmdForInt)
             self.batch_size.insert(0, 128)
             self.batch_size.pack()
-
-            Label(self.mainFrame, text="validation_split", relief=RIDGE).pack()
-            self.validation_split = Entry(self.mainFrame, validate="all", validatecommand=vcmdForFloat)
-            self.validation_split.insert(0, 0.1)
-            self.validation_split.pack()
+            parameters.append(self.batch_size)
 
             self.paramDesc["link"] = "https:////keras.io/models/sequential/"
+            self.paramDesc["number of hidden layers"] = "Integer.\nSpecify the number of hidden layers."
+            self.paramDesc["hidden layer sizes"] = "tuple, length = n_layers - 2, default (100,)\nThe ith element represents the number of neurons in the ith hidden layer."
             self.paramDesc["epochs"] = "Integer.\nNumber of epochs to train the model. An epoch is an iteration over the entire x and y data provided. Note that in conjunction with initial_epoch,  epochs is to be understood as 'final epoch'. The model is not trained for a number of iterations given by epochs, but merely until the epoch of index epochs is reached."
             self.paramDesc["batch_size"] = " Integer or None.\nNumber of samples per gradient update. If unspecified, batch_size will default to 32."
-            self.paramDesc['validation_split'] = "Float between 0 and 1.\nFraction of the training data to be used as validation data. The model will set apart this fraction of the training data, will not train on it, and will evaluate the loss and any model metrics on this data at the end of each epoch. The validation data is selected from the last samples in the x and y data provided, before shuffling."
 
         # Compute using the specified parameters
-        submit = Button(self.mainFrame, text="Submit", command=self.compute)
+        # Lambda means that the method won't be called immediately (only when button is pressed)
+        submit = Button(self.mainFrame, text="Submit", command=lambda: self.validateAllInputs(parameters))
         submit.pack()
 
         # Notify user that program is reading off the csv
@@ -537,6 +556,11 @@ class Window:
         # Accept Float values and empty string (for erasing the one only number)
         if P == "":
             return True
+        elif S == " ":
+            self.mainLog.text_widget.insert(END, "No spaces! Enter a digit!\n")
+            self.mainLog.text_widget.see("end")
+            self.mainFrame.bell()
+            return False
 
         try:
             number = float(P)
@@ -559,6 +583,11 @@ class Window:
         # Accept Float values and empty string (for erasing the one only number)
         if P == "":
             return True
+        elif S == " ":
+            self.mainLog.text_widget.insert(END, "No spaces! Enter a digit!\n")
+            self.mainLog.text_widget.see("end")
+            self.mainFrame.bell()
+            return False
 
         try:
             number = float(P)
@@ -583,9 +612,7 @@ class Window:
             return True
 
         try:
-            hidden_layer_sizes = P.split(",")
-
-            if S.isdigit() or S == "," or S == "" :
+            if S.isdigit() or S == "," or S == "":
                 return True
             else:
                 self.mainLog.text_widget.insert(END, "Hidden layer sizes should be separated by commas (ex: 2,3,4). This means there are 2 nodes in first hidden layer, 3 nodes in second hidden layer, and 4 nodes in the third hidden layer.!\n")
@@ -598,6 +625,17 @@ class Window:
             self.mainFrame.bell()
             return False
 
+    # Final validation of inputs (doesn't compute anything if a parameter is field or is 0
+    def validateAllInputs(self, parameters):
+        for parameter in parameters:
+            if not parameter.get().strip() or parameter.get() == "0":
+                self.mainFrame.bell()
+                self.mainLog.text_widget.insert(END, "Check the parameters! You may have entered nothing or 0 for an input!")
+                return
+
+
+        self.compute()
+
     # Compute the results of classifier
     def compute(self):
         self.mainLog.text_widget.insert(END, "Computing...\n")
@@ -605,44 +643,89 @@ class Window:
 
         classifier = None
 
+        # Split the dataframe dataset.
+        X_train, X_test, y_train, y_test = train_test_split(self.X, self.y, test_size=float(self.test_size.get()),
+                                                            random_state=int(self.random_state.get()))
+
+        if self.algorithm == "K-Nearest Neighbors":
+            # Instantiating KNN object
+            classifier = KNeighborsClassifier(n_neighbors=int(self.n_neighbors.get()))
+        elif self.algorithm == "Decision Tree":
+            # Instantiating DecisionTreeClassifier object
+            classifier = DecisionTreeClassifier()
+        elif self.algorithm == "Random Forest":
+            # Instantiating RandomForestClassifier object
+            classifier = RandomForestClassifier(n_estimators=int(self.n_estimators.get()), bootstrap=True)
+        elif self.algorithm == "Linear Regression":
+            # Instantiating Linear Regression object
+            classifier = LinearRegression()
+        elif self.algorithm == "Logistic Regression":
+            # Instantiating Logistic Regression object
+            classifier = LogisticRegression()
+        elif self.algorithm == "Linear SVC":
+            # LinearSVC classifier
+            classifier = LinearSVC()
+        elif self.algorithm == "Multilayer Perceptron":
+            # Turn the string (containing commas) into a list
+            modified_hidden_layer_sizes = self.hidden_layer_sizes.get().split(",")
+
+            # Remove any empty string in the list
+            modified_hidden_layer_sizes = [item.strip() for item in modified_hidden_layer_sizes if item.strip()]
+
+            # Turn the list of strings into a tuple of int
+            modified_hidden_layer_sizes = tuple([int(i) for i in modified_hidden_layer_sizes])
+
+            # Instantiate MLP classifier
+            classifier = MLPClassifier(activation= 'logistic', solver='adam',max_iter=int(self.max_iter.get()),
+                                       learning_rate_init=0.002, alpha=float(self.alpha.get()), hidden_layer_sizes=modified_hidden_layer_sizes)
+
+        elif self.algorithm == "Keras":
+            # Make numpy arrays from the split dataframes
+            X_train = np.array(X_train)
+            y_train = np.array(y_train)
+            y_train = LabelEncoder().fit_transform(y_train)
+            y_train = pd.get_dummies(y_train).values
+
+            X_test = np.array(X_test)
+            y_test = np.array(y_test)
+            y_test = LabelEncoder().fit_transform(y_test)
+            y_test= pd.get_dummies(y_test).values
+
+            # Turn the string (containing commas) into a list
+            modified_hidden_layer_sizes = self.hidden_layer_sizes.get().split(",")
+
+            # Remove any empty string in the list
+            modified_hidden_layer_sizes = [item.strip() for item in modified_hidden_layer_sizes if item.strip()]
+
+            # Turn the list of strings into a tuple of int
+            modified_hidden_layer_sizes = tuple([int(i) for i in modified_hidden_layer_sizes])
+
+            # create model
+            classifier = Sequential()
+            # Input layer (input is the number of features we have)
+            classifier.add(Dense(self.numberOfFeatures, input_dim=self.numberOfFeatures, activation='relu'))
+            # Normalize the activations of the previous layer at each batch
+            classifier.add(BatchNormalization())
+
+            # Hidden Layer (number of features + number of labels)/2 is the rule of thumb for neurons in hidden layer
+            for i in modified_hidden_layer_sizes:
+                classifier.add(Dense(i, activation='relu'))
+
+            # Output layer
+            classifier.add(Dense(self.numberOfLabels, activation='softmax'))
+            # model.add(Dropout(0.2))
+
+            # Compile model
+            classifier.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+
+            # Fit the model
+            classifier.fit(X_train, y_train, epochs=int(self.epochs.get()), batch_size=int(self.batch_size.get()))
+
+            # Accuracy of testing data on predictive model
+            score = classifier.evaluate(X_test, y_test, batch_size=int(self.batch_size.get()))
+
+
         if (self.algorithm != "Keras"):
-            # Split the dataframe dataset.
-            X_train, X_test, y_train, y_test = train_test_split(self.X, self.y, test_size=float(0.3),
-                                                                random_state=int(self.random_state.get()))
-
-            if self.algorithm == "K-Nearest Neighbors":
-                # Instantiating KNN object
-                classifier = KNeighborsClassifier(n_neighbors=int(self.n_neighbors.get()))
-            elif self.algorithm == "Decision Tree":
-                # Instantiating DecisionTreeClassifier object
-                classifier = DecisionTreeClassifier()
-            elif self.algorithm == "Random Forest":
-                # Instantiating RandomForestClassifier object
-                classifier = RandomForestClassifier(n_estimators=int(self.n_estimators.get()), bootstrap=True)
-            elif self.algorithm == "Linear Regression":
-                # Instantiating Linear Regression object
-                classifier = LinearRegression()
-            elif self.algorithm == "Logistic Regression":
-                # Instantiating Logistic Regression object
-                classifier = LogisticRegression()
-            elif self.algorithm == "Linear SVC":
-                # LinearSVC classifier
-                classifier = LinearSVC()
-            elif self.algorithm == "Multilayer Perceptron":
-                # Turn the string (containing commas) into a list
-                modified_hidden_layer_sizes = self.hidden_layer_sizes.get().split(",")
-
-                # Remove any empty string in the list
-                modified_hidden_layer_sizes = [item.strip() for item in modified_hidden_layer_sizes if item.strip()]
-
-                # Turn the list of strings into a tuple of int
-                modified_hidden_layer_sizes = tuple([int(i) for i in modified_hidden_layer_sizes])
-
-                # Instantiate MLP classifier
-                classifier = MLPClassifier(activation= 'logistic', solver='adam',max_iter=int(self.max_iter.get()),
-                                           learning_rate_init=0.002, alpha=float(self.alpha.get()), hidden_layer_sizes=modified_hidden_layer_sizes)
-
-
             # fit the model with the training set
             classifier.fit(X_train, y_train)
 
@@ -664,38 +747,20 @@ class Window:
                     "Training Set Shape": X_train.shape,
                     "Testing Set Shape": X_test.shape,
                     "Classifier": classifier,
-                    "Accuracy for " + self.algorithm : str(accuracy),
-                    "Cross Validation for " + self.algorithm : accuracy_list.mean()}
+                    "Accuracy for " + self.algorithm: str(accuracy),
+                    "Cross Validation for " + self.algorithm: accuracy_list.mean()}
 
-        elif self.algorithm == "Keras":
-            # Make numpy arrays from X and y dataframe
-            X = np.array(self.X)
-            y = np.array(self.y)
-            y1 = LabelEncoder().fit_transform(y)
-            Y = pd.get_dummies(y1).values
-
-            # create model
-            model = Sequential()
-            # Input layer (input is the number of features we have)
-            model.add(Dense(self.numberOfFeatures, input_dim=self.numberOfFeatures, activation='relu'))
-            # Normalize the activations of the previous layer at each batch
-            model.add(BatchNormalization())
-            # Hidden Layer (number of features + number of labels)/2 is the rule of thumb for neurons in hidden layer
-            model.add(Dense(math.ceil((self.numberOfFeatures + self.numberOfLabels) / 2), activation='relu'))
-            # Output layer
-            model.add(Dense(self.numberOfLabels, activation='softmax'))
-            # model.add(Dropout(0.2))
-
-            # Compile model
-            model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-
-            # Fit the model
-            history = model.fit(X, Y, epochs=int(self.epochs.get()), batch_size=int(self.batch_size.get()), validation_split=float(self.validation_split.get())).history
-
+        else:
             # Dictionary containing information
-            dict = {"Epochs": self.epochs.get(),
+            dict = {"Training Set Size": 1.00 - float(self.test_size.get()),
+                    "Testing Set Size": float(self.test_size.get()),
+                    "Training Set Shape": X_train.shape,
+                    "Testing Set Shape": X_test.shape,
+                    "Number Of hidden layers": self.numberOfHiddenLayers.get(),
+                    "Hidden layer sizes:": self.hidden_layer_sizes.get(),
+                    "Epochs": self.epochs.get(),
                     "Batch Size": self.batch_size.get(),
-                    "Accuracy": str(np.mean(history['acc']))
+                    "Accuracy": score,
                     }
 
 
