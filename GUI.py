@@ -265,7 +265,7 @@ class Window:
     # Prompts the user to open a CSV File
     def openFile(self):
         # The full path of the file
-        file = filedialog.askopenfilename(initialdir = getcwd(), title = "Select file",filetypes = (("csv files","*.csv"),))
+        file = filedialog.askopenfilename(initialdir = getcwd() + "/csv", title = "Select file",filetypes = (("csv files","*.csv"),))
 
         if file:
             # Actual filename
@@ -383,7 +383,7 @@ class Window:
         self.algorithm = algorithm
 
         # Load image
-        load = Image.open(algorithm + ".png")
+        load = Image.open("img/" + algorithm + ".png")
 
         # Load image
         load = load.resize((100, 100), Image.ANTIALIAS)

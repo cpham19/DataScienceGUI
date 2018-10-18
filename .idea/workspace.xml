@@ -3,7 +3,19 @@
   <component name="ChangeListManager">
     <list default="true" id="5a25da15-5493-405e-a971-68e380c0297b" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cancer.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Decision Tree.png" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/GUI.py" beforeDir="false" afterPath="$PROJECT_DIR$/GUI.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Heart_s.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/K-Nearest Neighbors.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Keras.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Linear Regression.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Logistic Regression.PNG" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Multilayer Perceptron.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Random Forest.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Sample (iris).csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Sample (sensor).csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Support Vector Machine.png" beforeDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -50,30 +62,31 @@
     <session id="-1016950362">
       <usages-collector id="statistics.lifecycle.project">
         <counts>
-          <entry key="project.closed" value="18" />
+          <entry key="project.closed" value="21" />
           <entry key="project.open.time.10" value="4" />
           <entry key="project.open.time.11" value="3" />
           <entry key="project.open.time.12" value="3" />
-          <entry key="project.open.time.13" value="1" />
+          <entry key="project.open.time.13" value="2" />
           <entry key="project.open.time.14" value="1" />
           <entry key="project.open.time.15" value="1" />
+          <entry key="project.open.time.17" value="1" />
           <entry key="project.open.time.19" value="1" />
           <entry key="project.open.time.25" value="1" />
           <entry key="project.open.time.3" value="1" />
           <entry key="project.open.time.6" value="2" />
-          <entry key="project.open.time.8" value="3" />
+          <entry key="project.open.time.8" value="4" />
           <entry key="project.open.time.9" value="3" />
-          <entry key="project.opened" value="24" />
+          <entry key="project.opened" value="27" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
-          <entry key="py" value="15071" />
+          <entry key="py" value="15095" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
-          <entry key="Python" value="15071" />
+          <entry key="Python" value="15095" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.open">
@@ -93,11 +106,11 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/GUI.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-1216">
-              <caret line="687" lean-forward="true" selection-start-line="687" selection-end-line="687" />
+            <state relative-caret-position="136">
+              <caret line="380" column="59" lean-forward="true" selection-start-line="380" selection-start-column="59" selection-end-line="380" selection-end-column="59" />
               <folding>
                 <element signature="e#128#149#0" expanded="true" />
-                <marker date="1539800639293" expanded="true" signature="28760:29085" ph="..." />
+                <marker date="1539881278436" expanded="true" signature="28778:29103" ph="..." />
               </folding>
             </state>
           </provider>
@@ -179,10 +192,10 @@
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="169" />
-    <option name="y" value="151" />
+    <option name="x" value="192" />
+    <option name="y" value="15" />
     <option name="width" value="1677" />
-    <option name="height" value="1022" />
+    <option name="height" value="1023" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
@@ -196,6 +209,11 @@
             <path>
               <item name="DataScienceGUI" type="b2602c69:ProjectViewProjectNode" />
               <item name="DataScienceGUI" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="DataScienceGUI" type="b2602c69:ProjectViewProjectNode" />
+              <item name="DataScienceGUI" type="462c0819:PsiDirectoryNode" />
+              <item name="venv" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
@@ -294,14 +312,14 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="113" y="101" width="1118" height="681" extended-state="0" />
+    <frame x="128" y="10" width="1118" height="682" extended-state="0" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.14893617" />
       <window_info id="Structure" order="1" weight="0.13036565" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
-      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.6800446" weight="0.29508197" />
+      <window_info anchor="bottom" id="Run" order="2" sideWeight="0.6800446" weight="0.29454544" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.39786857" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -337,11 +355,11 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/GUI.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1216">
-          <caret line="687" lean-forward="true" selection-start-line="687" selection-end-line="687" />
+        <state relative-caret-position="136">
+          <caret line="380" column="59" lean-forward="true" selection-start-line="380" selection-start-column="59" selection-end-line="380" selection-end-column="59" />
           <folding>
             <element signature="e#128#149#0" expanded="true" />
-            <marker date="1539800639293" expanded="true" signature="28760:29085" ph="..." />
+            <marker date="1539881278436" expanded="true" signature="28778:29103" ph="..." />
           </folding>
         </state>
       </provider>
