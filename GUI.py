@@ -1,5 +1,5 @@
 # Created using https://pythonprogramming.net/python-3-tkinter-basics-tutorial/ tutorial
-#Import everything from Tkinter module
+# Import everything from Tkinter module
 from tkinter import *
 from PIL import Image, ImageTk
 from tkinter import filedialog
@@ -12,17 +12,14 @@ import math
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.linear_model import LinearRegression
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.neural_network import MLPClassifier
-from sklearn.metrics import classification_report
 from sklearn.svm import LinearSVC, SVC
 from sklearn.datasets import make_classification
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, roc_auc_score, classification_report
 from sklearn.cross_validation import cross_val_score
-from sklearn.preprocessing import scale
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import scale, LabelEncoder
 import numpy as np
 import pandas as pd
 
@@ -30,6 +27,8 @@ import pandas as pd
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, BatchNormalization
 from keras.utils import to_categorical
+from keras.callbacks import LambdaCallback, Callback
+
 
 # Create a Text widget that uses pixels for dimensions (width and height)
 # Taken from http://code.activestate.com/recipes/578887-text-widget-width-and-height-in-pixels-tkinter/
@@ -66,6 +65,10 @@ class Text2(Frame):
         Frame.grid(self, *args, **kwargs)
         self.grid_propagate(False)
 
+    def insert(self, string):
+        self.text_widget.insert(END, string)
+        self.text_widget.see("end")
+
     def delete(self):
         self.text_widget.delete(1.0, END)
 
@@ -89,7 +92,7 @@ class Window:
 
         # Creates a menu instance
         menu = Menu(self.root)
-        self.root.config(menu = menu)
+        self.root.config(menu=menu)
 
         # Creates a file object for "File" option
         # Adds several commands to the "File" option
@@ -117,7 +120,7 @@ class Window:
         # Log for main stuff
         bottom = PanedWindow(main, orient=HORIZONTAL, sashpad=1, sashrelief=RAISED)
 
-        # Adds top and bototm panedwindows
+        # Adds top and bottom panedwindows
         main.add(top, height=440)
         main.add(bottom, height=200)
 
@@ -163,8 +166,7 @@ class Window:
         labelFrameForMainLog = LabelFrame(bottom, text="Main log")
         # Log for main frame
         self.mainLog = Text2(labelFrameForMainLog, width=self.width, height=self.height - 100)
-        self.mainLog.text_widget.insert(END, "Started the Data Science GUI!\n")
-        self.mainLog.text_widget.see("end")
+        self.mainLog.insert("Started the Data Science GUI!\n")
         self.mainLog.pack()
 
         # Add Labelframe for main log
@@ -204,33 +206,28 @@ class Window:
                 if key == "link":
                     pass
                 else:
-                    self.parameterDescLog.text_widget.insert(END, str(key) + ": " + str(value) + "\n")
-                    self.parameterDescLog.text_widget.insert(END, "\n")
-
-            self.parameterDescLog.text_widget.see("end")
+                    self.parameterDescLog.insert(str(key) + ": " + str(value) + "\n\n")
 
         except (NameError, AttributeError):
             # Display this if user hasn't open a CSV file and select an algorithm
-            label = Label(self.window, text="You need to open a CSV file and select an algorithm before displaying this!")
+            label = Label(self.window,text="You need to open a CSV file and select an algorithm before displaying this!")
             label.pack()
             pass
 
     # Display the csv file in text
     def displayFile(self):
-        self.csvLog.text_widget.insert(END, "Feature Matrix\n")
-        self.csvLog.text_widget.insert(END, "----------------------\n")
-        self.csvLog.text_widget.insert(END, self.X)
-        self.csvLog.text_widget.insert(END, "\n\n")
-        self.csvLog.text_widget.insert(END, "Label Vector\n")
-        self.csvLog.text_widget.insert(END, "----------------------\n")
-        self.csvLog.text_widget.insert(END, self.y)
-        self.csvLog.text_widget.see("end")
+        self.csvLog.insert("Feature Matrix\n")
+        self.csvLog.insert("----------------------\n")
+        self.csvLog.insert(self.X)
+        self.csvLog.insert("\n\n")
+        self.csvLog.insert("Label Vector\n")
+        self.csvLog.insert("----------------------\n")
+        self.csvLog.insert(self.y)
 
     # Display results of selected algorithm and parameters
     def displayResult(self, dict):
         # Notify the user that training is done
-        self.mainLog.text_widget.insert(END, "Done computing.\n")
-        self.mainLog.text_widget.see("end")
+        self.mainLog.insert("Done computing.\n")
 
         # Clear result log and change label frame
         self.resultLog.delete()
@@ -238,9 +235,114 @@ class Window:
 
         # Print out the results
         for key, value in dict.items():
-            self.resultLog.text_widget.insert(END, str(key) + ": " + str(value) + "\n")
+            self.resultLog.insert(str(key) + ": " + str(value) + "\n")
 
-        self.resultLog.text_widget.see("end")
+
+    def displayPredictionWindow(self):
+        # Create a new frame/window from root window to display parameter descriptions
+        self.predictionWindow = Toplevel(self.root)
+        self.predictionWindow.geometry("480x240")
+        self.predictionWindow.title("Prediction Window of " + self.algorithm)
+
+        # Width and height for window
+        width = 480
+        height = 240
+
+        # Paned window for left and right
+        main = PanedWindow(self.predictionWindow, orient=HORIZONTAL, sashpad=1, sashrelief=RAISED)
+        main.pack(fill=BOTH, expand=1)
+
+        # Paned window for left  and right
+        left = PanedWindow(main, orient=VERTICAL, sashpad=1, sashrelief=RAISED)
+
+        # Log for prediction stuff
+        right = PanedWindow(main, orient=VERTICAL, sashpad=1, sashrelief=RAISED)
+
+        main.add(left, width=int(width / 2))
+        main.add(right, width=int(width / 2))
+
+        # LabelFrame for Left Frame
+        labelFrameForLeftFrame = LabelFrame(left, text="Prediction Frame")
+
+        # Object containing feature columns and their datatypes
+        self.datatypes = self.X.dtypes
+
+        # Validation command
+        # %d = Type of action (1=insert, 0=delete, -1 for others)
+        # %P = value of the entry if the edit is allowed (all, focusin, focusout, forced)
+        vcmdForInt = (self.predictionWindow.register(self.validateInt2),
+                      '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
+        vcmdForFloat = (self.predictionWindow.register(self.validateFloat),
+                        '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
+        vcmdForFloat2 = (self.predictionWindow.register(self.validateFloat2),
+                         '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
+
+        # Contains entries
+        arrayOfEntries = []
+
+        # Counter for row
+        counterForRow = 0
+
+        # Go through an object that contains the feature columns and their datatypes
+        for attr, value in self.datatypes.items():
+            Label(labelFrameForLeftFrame, text=attr).grid(row=counterForRow, sticky=W)
+
+            entry = None
+            if (value == "int64"):
+                entry = Entry(labelFrameForLeftFrame, width=30, validate="all", validatecommand=vcmdForInt)
+                entry.insert(0, 1)
+            elif (value == "float64"):
+                entry = Entry(labelFrameForLeftFrame, width=30, validate="all", validatecommand=vcmdForFloat2)
+                entry.insert(0, 1.0)
+
+            entry.grid(row=counterForRow, column=1, sticky=E)
+            arrayOfEntries.append(entry)
+            counterForRow = counterForRow + 1
+
+        button = Button(labelFrameForLeftFrame, text="Predict", command=lambda: self.predict(arrayOfEntries))
+        button.grid(row=counterForRow, columnspan=2, sticky=W + E)
+
+        left.add(labelFrameForLeftFrame, width=int(width / 2), height=height)
+
+        # LabelFrame for Right Frame
+        labelFrameForRightFrame = LabelFrame(right, text="Prediction Frame")
+        # Log
+        self.predictionLog = Text2(labelFrameForRightFrame, width=int(width / 2), height=height)
+        self.predictionLog.pack()
+
+        right.add(labelFrameForRightFrame, width=int(width / 2), height=height)
+
+    # For user-input predictions
+    def predict(self, entries):
+        for entry in entries:
+            if not entry.get().strip():
+                self.predictionWindow.bell()
+                self.mainLog.insert("Check the parameters! You may have entered nothing or 0 for an input!\n")
+                return
+
+        counter = 0
+        arrayForUserInput = []
+        for attr, value in self.datatypes.items():
+            if (value == "int64"):
+                arrayForUserInput.append(int(entries[counter].get()))
+            elif (value == "float64"):
+                arrayForUserInput.append(float(entries[counter].get()))
+
+            self.predictionLog.insert(attr + ": " + entries[counter].get() + "\n")
+
+            counter = counter + 1
+
+        arrayForUserInput = np.array(arrayForUserInput).reshape(1, -1)
+
+        prediction = None
+
+        if (self.algorithm != "Keras"):
+            prediction = self.classifier.predict(arrayForUserInput)[0]
+        else:
+            # Using label_encoder to reverse the one-hot-encoding (from numerical label to categorical label)
+            prediction = self.label_encoder.inverse_transform(np.argmax(self.classifier.predict(arrayForUserInput)[0]))
+        self.predictionLog.insert("Prediction: " + str(prediction) + "\n\n")
+
 
     # Remove features from label listbox when user selects the features
     def removeFeatures(self, event):
@@ -261,19 +363,18 @@ class Window:
             if col not in selected_features:
                 self.list_of_label.insert(0, col)
 
-
     # Prompts the user to open a CSV File
     def openFile(self):
         # The full path of the file
-        file = filedialog.askopenfilename(initialdir = getcwd() + "/csv", title = "Select file",filetypes = (("csv files","*.csv"),))
+        file = filedialog.askopenfilename(initialdir=getcwd() + "/csv", title="Select file",
+                                          filetypes=(("csv files", "*.csv"),))
 
         if file:
             # Actual filename
             self.filename = os.path.basename(file)
 
             # Notify user that program is reading off the csv
-            self.mainLog.text_widget.insert(END, "Reading '" + self.filename + "' from '" + file + "'.\n")
-            self.mainLog.text_widget.see("end")
+            self.mainLog.insert("Reading '" + self.filename + "' from '" + file + "'.\n")
 
             # Clear the selection_Frame
             # Clear the widgets in the selection frame after you selected features and labels
@@ -328,9 +429,8 @@ class Window:
             widget.destroy()
 
         # Notify user of selected features and label
-        self.mainLog.text_widget.insert(END, "You have selected " + str(selected_features) + " as features.\n")
-        self.mainLog.text_widget.insert(END, "You have selected " + str(selected_label) + " as the label.\n")
-        self.mainLog.text_widget.see("end")
+        self.mainLog.insert("You have selected " + str(selected_features) + " as features.\n")
+        self.mainLog.insert("You have selected " + str(selected_label) + " as the label.\n")
 
         # Feature matrix and label vector
         self.X = self.df[selected_features]
@@ -345,7 +445,7 @@ class Window:
 
         # Option Menu for choosing machine learning algorithms
         algorithms = ["K-Nearest Neighbors", "Decision Tree", "Random Forest", "Linear Regression",
-                       "Logistic Regression", "Linear SVC", "Multilayer Perceptron", "Keras"]
+                      "Logistic Regression", "Linear SVC", "Multilayer Perceptron", "Keras"]
         self.default = StringVar()
         self.default.set("Select an algorithm.")
         self.options = OptionMenu(self.mainFrame, self.default, *algorithms, command=self.selectedAlgorithm)
@@ -362,7 +462,7 @@ class Window:
 
         # Option Menu for choosing machine learning algorithms
         algorithms = ["K-Nearest Neighbors", "Decision Tree", "Random Forest", "Linear Regression",
-                       "Logistic Regression", "Linear SVC", "Multilayer Perceptron", "Keras"]
+                      "Logistic Regression", "Linear SVC", "Multilayer Perceptron", "Keras"]
         self.default = StringVar()
         self.default.set(algorithm)
         self.options = OptionMenu(self.mainFrame, self.default, *algorithms, command=self.selectedAlgorithm)
@@ -378,7 +478,7 @@ class Window:
         vcmdForFloat2 = (self.mainFrame.register(self.validateFloat2),
                          '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
         vcmdForHiddenLayerSizes = (self.mainFrame.register(self.validateHiddenLayerSizes),
-                         '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
+                                   '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
 
         self.algorithm = algorithm
 
@@ -415,10 +515,12 @@ class Window:
         self.cv.pack()
         parameters.append(self.cv)
 
-        self.paramDesc["test_size"] = "float, int or None, optional (default=0.25)\nIf float, should be between 0.0 and 1.0 and represent the proportion of the dataset to include in the test split. If int, represents the absolute number of test samples. If None, the value is set to the complement of the train size. By default, the value is set to 0.25. The default will change in version 0.21. It will remain 0.25 only if train_size is unspecified, otherwise it will complement the specified train_size."
-        self.paramDesc["random_state"] = "int, RandomState instance or None, optional (default=None)\nIf int, random_state is the seed used by the random number generator; If RandomState instance, random_state is the random number generator; If None, the random number generator is the RandomState instance used by np.random."
-        self.paramDesc["cv"] = " int, cross-validation generator or an iterable, optional\nDetermines the cross-validation splitting strategy. Possible inputs for cv are:\nNone, to use the default 3-fold cross validation,\ninteger, to specify the number of folds in a (Stratified)KFold,\nAn object to be used as a cross-validation generator.\nAn iterable yielding train, test splits."
-
+        self.paramDesc[
+            "test_size"] = "float, int or None, optional (default=0.25)\nIf float, should be between 0.0 and 1.0 and represent the proportion of the dataset to include in the test split. If int, represents the absolute number of test samples. If None, the value is set to the complement of the train size. By default, the value is set to 0.25. The default will change in version 0.21. It will remain 0.25 only if train_size is unspecified, otherwise it will complement the specified train_size."
+        self.paramDesc[
+            "random_state"] = "int, RandomState instance or None, optional (default=None)\nIf int, random_state is the seed used by the random number generator; If RandomState instance, random_state is the random number generator; If None, the random number generator is the RandomState instance used by np.random."
+        self.paramDesc[
+            "cv"] = " int, cross-validation generator or an iterable, optional\nDetermines the cross-validation splitting strategy. Possible inputs for cv are:\nNone, to use the default 3-fold cross validation,\ninteger, to specify the number of folds in a (Stratified)KFold,\nAn object to be used as a cross-validation generator.\nAn iterable yielding train, test splits."
 
         if self.algorithm == "K-Nearest Neighbors":
             Label(self.mainFrame, text="n_neighbors", relief=RIDGE).pack()
@@ -427,11 +529,14 @@ class Window:
             self.n_neighbors.pack()
             parameters.append(self.n_neighbors)
 
-            self.paramDesc["link"] = "https:////scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsClassifier.html"
-            self.paramDesc["n_neighbors"] = "int, optional (default = 5)\nNumber of neighbors to use by default for kneighbors queries."
+            self.paramDesc[
+                "link"] = "https:////scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsClassifier.html"
+            self.paramDesc[
+                "n_neighbors"] = "int, optional (default = 5)\nNumber of neighbors to use by default for kneighbors queries."
 
         elif algorithm == "Decision Tree":
-            self.paramDesc["link"] = "https////scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html"
+            self.paramDesc[
+                "link"] = "https////scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html"
 
         elif algorithm == "Random Forest":
             Label(self.mainFrame, text="n_estimators", relief=RIDGE).pack()
@@ -440,14 +545,17 @@ class Window:
             self.n_estimators.pack()
             parameters.append(self.n_estimators)
 
-            self.paramDesc["link"] = "https:////scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html"
+            self.paramDesc[
+                "link"] = "https:////scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html"
             self.paramDesc["n_estimators"] = "integer, optional (default=10)\nThe number of trees in the forest."
 
         elif algorithm == "Linear Regression":
-            self.paramDesc["link"] = "https:////scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html"
+            self.paramDesc[
+                "link"] = "https:////scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html"
 
         elif algorithm == "Logistic Regression":
-            self.paramDesc["link"] = "https:////scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html"
+            self.paramDesc[
+                "link"] = "https:////scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html"
 
         elif algorithm == "Linear SVC":
             Label(self.mainFrame, text="C", relief=RIDGE).pack()
@@ -485,10 +593,12 @@ class Window:
             self.hidden_layer_sizes.pack()
             parameters.append(self.hidden_layer_sizes)
 
-            self.paramDesc["link"] = "https:////scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html"
+            self.paramDesc[
+                "link"] = "https:////scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html"
             self.paramDesc["max_iter"] = "int, (default=1000)\nThe maximum number of iterations to be run."
             self.paramDesc["alpha"] = "float, optional, default 0.0001\nL2 penalty (regularization term) parameter."
-            self.paramDesc["hidden_layer_sizes"] = "tuple, length = n_layers - 2, default (100,)\nThe ith element represents the number of neurons in the ith hidden layer."
+            self.paramDesc[
+                "hidden_layer_sizes"] = "tuple, length = n_layers - 2, default (100,)\nThe ith element represents the number of neurons in the ith hidden layer."
 
         elif algorithm == "Keras":
             Label(self.mainFrame, text="Number of hidden layers", relief=RIDGE).pack()
@@ -517,9 +627,12 @@ class Window:
 
             self.paramDesc["link"] = "https:////keras.io/models/sequential/"
             self.paramDesc["number of hidden layers"] = "Integer.\nSpecify the number of hidden layers."
-            self.paramDesc["hidden layer sizes"] = "tuple, length = n_layers - 2, default (100,)\nThe ith element represents the number of neurons in the ith hidden layer."
-            self.paramDesc["epochs"] = "Integer.\nNumber of epochs to train the model. An epoch is an iteration over the entire x and y data provided. Note that in conjunction with initial_epoch,  epochs is to be understood as 'final epoch'. The model is not trained for a number of iterations given by epochs, but merely until the epoch of index epochs is reached."
-            self.paramDesc["batch_size"] = " Integer or None.\nNumber of samples per gradient update. If unspecified, batch_size will default to 32."
+            self.paramDesc[
+                "hidden layer sizes"] = "tuple, length = n_layers - 2, default (100,)\nThe ith element represents the number of neurons in the ith hidden layer."
+            self.paramDesc[
+                "epochs"] = "Integer.\nNumber of epochs to train the model. An epoch is an iteration over the entire x and y data provided. Note that in conjunction with initial_epoch,  epochs is to be understood as 'final epoch'. The model is not trained for a number of iterations given by epochs, but merely until the epoch of index epochs is reached."
+            self.paramDesc[
+                "batch_size"] = " Integer or None.\nNumber of samples per gradient update. If unspecified, batch_size will default to 32."
 
         # Compute using the specified parameters
         # Lambda means that the method won't be called immediately (only when button is pressed)
@@ -527,8 +640,7 @@ class Window:
         submit.pack()
 
         # Notify user that program is reading off the csv
-        self.mainLog.text_widget.insert(END, self.algorithm + " has been selected!\n")
-        self.mainLog.text_widget.see("end")
+        self.mainLog.insert(self.algorithm + " has been selected!\n")
 
     # Validate integer inputs (don't allow user to enter anything else)
     def validateInt(self, d, i, P, s, S, v, V, W):
@@ -543,11 +655,21 @@ class Window:
         # print("end", "W='%s'\n" % W)
 
         # Accept Integer values and empty string (for erasing the one only number)
-        if P.isdigit() or P == "":
+        if (P.isdigit() and int(P) > 0) or P == "":
             return True
         else:
-            self.mainLog.text_widget.insert(END, "Please enter an integer.\n")
-            self.mainLog.text_widget.see("end")
+            self.mainLog.insert("Please enter an integer (if the field is empty, enter an integer greater than 0).\n")
+            self.mainFrame.bell()
+            return False
+
+
+    # Validate integer inputs (don't allow user to enter anything else)
+    def validateInt2(self, d, i, P, s, S, v, V, W):
+        # Accept Integer values and empty string (for erasing the one only number)
+        if (P.isdigit() and int(P) >= 0) or P == "":
+            return True
+        else:
+            self.mainLog.insert("Please enter an integer (if the field is empty, enter an integer greater than 0).\n")
             self.mainFrame.bell()
             return False
 
@@ -557,8 +679,7 @@ class Window:
         if P == "":
             return True
         elif S == " ":
-            self.mainLog.text_widget.insert(END, "No spaces! Enter a digit!\n")
-            self.mainLog.text_widget.see("end")
+            self.mainLog.insert("No spaces! Enter a digit!\n")
             self.mainFrame.bell()
             return False
 
@@ -568,13 +689,11 @@ class Window:
             if (0.0 <= number and number <= 1.0):
                 return True
             else:
-                self.mainLog.text_widget.insert(END, "Float numbers must be between 0.0 and 1.0 (inclusive)!\n")
-                self.mainLog.text_widget.see("end")
+                self.mainLog.insert("Float numbers must be between 0.0 and 1.0 (inclusive)!\n")
                 self.mainFrame.bell()
                 return False
         except ValueError:
-            self.mainLog.text_widget.insert(END, "Float numbers are only allowed (ex: 0.3 or .3)!\n")
-            self.mainLog.text_widget.see("end")
+            self.mainLog.insert("Float numbers are only allowed (ex: 0.3 or .3)!\n")
             self.mainFrame.bell()
             return False
 
@@ -584,8 +703,7 @@ class Window:
         if P == "":
             return True
         elif S == " ":
-            self.mainLog.text_widget.insert(END, "No spaces! Enter a digit!\n")
-            self.mainLog.text_widget.see("end")
+            self.mainLog.insert("No spaces! Enter a digit!\n")
             self.mainFrame.bell()
             return False
 
@@ -595,13 +713,11 @@ class Window:
             if (0.0 <= number and number <= 1000.0):
                 return True
             else:
-                self.mainLog.text_widget.insert(END, "Float numbers must be between 0.00001 and 1000.0 (inclusive)!\n")
-                self.mainLog.text_widget.see("end")
+                self.mainLog.insert("Float numbers must be between 0.00001 and 1000.0 (inclusive)!\n")
                 self.mainFrame.bell()
                 return False
         except ValueError:
-            self.mainLog.text_widget.insert(END, "Float numbers are only allowed (ex: 0.00001 or .00001)!\n")
-            self.mainLog.text_widget.see("end")
+            self.mainLog.insert("Float numbers are only allowed (ex: 0.00001 or .00001)!\n")
             self.mainFrame.bell()
             return False
 
@@ -615,13 +731,11 @@ class Window:
             if S.isdigit() or S == "," or S == "":
                 return True
             else:
-                self.mainLog.text_widget.insert(END, "Hidden layer sizes should be separated by commas (ex: 2,3,4). This means there are 2 nodes in first hidden layer, 3 nodes in second hidden layer, and 4 nodes in the third hidden layer.!\n")
-                self.mainLog.text_widget.see("end")
+                self.mainLog.insert("Hidden layer sizes should be separated by commas (ex: 2,3,4). This means there are 2 nodes in first hidden layer, 3 nodes in second hidden layer, and 4 nodes in the third hidden layer.!\n")
                 self.mainFrame.bell()
                 return False
         except ValueError:
-            self.mainLog.text_widget.insert(END, "Hidden layer sizes should be separated by commas (ex: 2,3,4). This means there are 2 nodes in first hidden layer, 3 nodes in second hidden layer, and 4 nodes in the third hidden layer.!\n")
-            self.mainLog.text_widget.see("end")
+            self.mainLog.insert("Hidden layer sizes should be separated by commas (ex: 2,3,4). This means there are 2 nodes in first hidden layer, 3 nodes in second hidden layer, and 4 nodes in the third hidden layer.!\n")
             self.mainFrame.bell()
             return False
 
@@ -630,18 +744,15 @@ class Window:
         for parameter in parameters:
             if not parameter.get().strip() or parameter.get() == "0":
                 self.mainFrame.bell()
-                self.mainLog.text_widget.insert(END, "Check the parameters! You may have entered nothing or 0 for an input!")
+                self.mainLog.insert("Check the parameters! You may have entered nothing or 0 for an input!\n")
                 return
-
 
         self.compute()
 
-    # Compute the results of classifier
+    # Compute the results of
     def compute(self):
-        self.mainLog.text_widget.insert(END, "Computing...\n")
-        self.mainLog.text_widget.see("end")
-
-        classifier = None
+        self.mainLog.insert("Computing...\n")
+        self.classifier = None
 
         # Split the dataframe dataset.
         X_train, X_test, y_train, y_test = train_test_split(self.X, self.y, test_size=float(self.test_size.get()),
@@ -649,22 +760,22 @@ class Window:
 
         if self.algorithm == "K-Nearest Neighbors":
             # Instantiating KNN object
-            classifier = KNeighborsClassifier(n_neighbors=int(self.n_neighbors.get()))
+            self.classifier = KNeighborsClassifier(n_neighbors=int(self.n_neighbors.get()))
         elif self.algorithm == "Decision Tree":
             # Instantiating DecisionTreeClassifier object
-            classifier = DecisionTreeClassifier()
+            self.classifier = DecisionTreeClassifier()
         elif self.algorithm == "Random Forest":
             # Instantiating RandomForestClassifier object
-            classifier = RandomForestClassifier(n_estimators=int(self.n_estimators.get()), bootstrap=True)
+            self.classifier = RandomForestClassifier(n_estimators=int(self.n_estimators.get()), bootstrap=True)
         elif self.algorithm == "Linear Regression":
             # Instantiating Linear Regression object
-            classifier = LinearRegression()
+            self.classifier = LinearRegression()
         elif self.algorithm == "Logistic Regression":
             # Instantiating Logistic Regression object
-            classifier = LogisticRegression()
+            self.classifier = LogisticRegression()
         elif self.algorithm == "Linear SVC":
             # LinearSVC classifier
-            classifier = LinearSVC()
+            self.classifier = LinearSVC()
         elif self.algorithm == "Multilayer Perceptron":
             # Turn the string (containing commas) into a list
             modified_hidden_layer_sizes = self.hidden_layer_sizes.get().split(",")
@@ -676,20 +787,24 @@ class Window:
             modified_hidden_layer_sizes = tuple([int(i) for i in modified_hidden_layer_sizes])
 
             # Instantiate MLP classifier
-            classifier = MLPClassifier(activation= 'logistic', solver='adam',max_iter=int(self.max_iter.get()),
-                                       learning_rate_init=0.002, alpha=float(self.alpha.get()), hidden_layer_sizes=modified_hidden_layer_sizes)
+            self.classifier = MLPClassifier(activation='logistic', solver='adam', max_iter=int(self.max_iter.get()),
+                                            learning_rate_init=0.002, alpha=float(self.alpha.get()),
+                                            hidden_layer_sizes=modified_hidden_layer_sizes)
 
         elif self.algorithm == "Keras":
             # Make numpy arrays from the split dataframes
             X_train = np.array(X_train)
             y_train = np.array(y_train)
-            y_train = LabelEncoder().fit_transform(y_train)
+
+            # Label encoder for transforming categorical labels into numerical labels (one-hot encoded)
+            self.label_encoder = LabelEncoder()
+            y_train = self.label_encoder.fit_transform(y_train)
             y_train = pd.get_dummies(y_train).values
 
             X_test = np.array(X_test)
             y_test = np.array(y_test)
-            y_test = LabelEncoder().fit_transform(y_test)
-            y_test= pd.get_dummies(y_test).values
+            y_test = self.label_encoder.fit_transform(y_test)
+            y_test = pd.get_dummies(y_test).values
 
             # Turn the string (containing commas) into a list
             modified_hidden_layer_sizes = self.hidden_layer_sizes.get().split(",")
@@ -701,42 +816,49 @@ class Window:
             modified_hidden_layer_sizes = tuple([int(i) for i in modified_hidden_layer_sizes])
 
             # create model
-            classifier = Sequential()
+            self.classifier = Sequential()
             # Input layer (input is the number of features we have)
-            classifier.add(Dense(self.numberOfFeatures, input_dim=self.numberOfFeatures, activation='relu'))
+            self.classifier.add(Dense(self.numberOfFeatures, input_dim=self.numberOfFeatures, activation='relu'))
             # Normalize the activations of the previous layer at each batch
-            classifier.add(BatchNormalization())
+            self.classifier.add(BatchNormalization())
 
             # Hidden Layer (number of features + number of labels)/2 is the rule of thumb for neurons in hidden layer
             for i in modified_hidden_layer_sizes:
-                classifier.add(Dense(i, activation='relu'))
+                self.classifier.add(Dense(i, activation='relu'))
 
             # Output layer
-            classifier.add(Dense(self.numberOfLabels, activation='softmax'))
+            self.classifier.add(Dense(self.numberOfLabels, activation='softmax'))
             # model.add(Dropout(0.2))
 
             # Compile model
-            classifier.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+            self.classifier.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+
+            # Print epoch number
+            epoch_begin_print_callback = LambdaCallback(
+                on_epoch_begin=lambda epoch, logs: self.mainLog.insert(str(epoch) + "\n"))
+
+            # Print the batch number at the beginning of every batch.
+            batch_print_callback = LambdaCallback(
+                on_batch_begin=lambda batch, logs: self.mainLog.insert(str(batch) + "\n"))
 
             # Fit the model
-            classifier.fit(X_train, y_train, epochs=int(self.epochs.get()), batch_size=int(self.batch_size.get()))
+            self.classifier.fit(X_train, y_train, epochs=int(self.epochs.get()), batch_size=int(self.batch_size.get()))
 
             # Accuracy of testing data on predictive model
-            score = classifier.evaluate(X_test, y_test, batch_size=int(self.batch_size.get()))
-
+            score = self.classifier.evaluate(X_test, y_test, batch_size=int(self.batch_size.get()))
 
         if (self.algorithm != "Keras"):
             # fit the model with the training set
-            classifier.fit(X_train, y_train)
+            self.classifier.fit(X_train, y_train)
 
             # Predict method is used for creating a prediction on testing data
-            y_predict = classifier.predict(X_test)
+            y_predict = self.classifier.predict(X_test)
 
             # Accuracy of testing data on predictive model
             accuracy = accuracy_score(y_test, y_predict)
 
             # Add #-fold Cross Validation with Supervised Learning
-            accuracy_list = cross_val_score(classifier, self.X, self.y, cv=int(self.cv.get()), scoring='accuracy')
+            accuracy_list = cross_val_score(self.classifier, self.X, self.y, cv=int(self.cv.get()), scoring='accuracy')
 
             # # Report
             # report = classification_report(y_test, y_predict, target_names=self.labels)
@@ -746,7 +868,7 @@ class Window:
                     "Testing Set Size": float(self.test_size.get()),
                     "Training Set Shape": X_train.shape,
                     "Testing Set Shape": X_test.shape,
-                    "Classifier": classifier,
+                    "Classifier": self.classifier,
                     "Accuracy for " + self.algorithm: str(accuracy),
                     "Cross Validation for " + self.algorithm: accuracy_list.mean()}
 
@@ -760,12 +882,12 @@ class Window:
                     "Hidden layer sizes:": self.hidden_layer_sizes.get(),
                     "Epochs": self.epochs.get(),
                     "Batch Size": self.batch_size.get(),
-                    "Accuracy": score,
+                    "Loss": score[0],
+                    "Accuracy": score[1],
                     }
 
-
         self.displayResult(dict)
-
+        self.displayPredictionWindow()
 
     # Exit the client
     def client_exit(self):
