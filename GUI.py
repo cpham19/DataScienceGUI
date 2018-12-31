@@ -16,9 +16,8 @@ from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.neural_network import MLPClassifier
 from sklearn.svm import LinearSVC, SVC
 from sklearn.datasets import make_classification
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import accuracy_score, roc_auc_score, classification_report
-from sklearn.cross_validation import cross_val_score
 from sklearn.preprocessing import scale, LabelEncoder
 import numpy as np
 import pandas as pd
