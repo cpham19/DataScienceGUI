@@ -22,12 +22,6 @@ from sklearn.preprocessing import scale, LabelEncoder
 import numpy as np
 import pandas as pd
 
-# Keras/Tensorflow
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, BatchNormalization
-from keras.utils import to_categorical
-from keras.callbacks import LambdaCallback, Callback
-
 
 # Create a Text widget that uses pixels for dimensions (width and height)
 # Taken from http://code.activestate.com/recipes/578887-text-widget-width-and-height-in-pixels-tkinter/
@@ -209,7 +203,8 @@ class Window:
 
         except (NameError, AttributeError):
             # Display this if user hasn't open a CSV file and select an algorithm
-            label = Label(self.window,text="You need to open a CSV file and select an algorithm before displaying this!")
+            label = Label(self.window,
+                          text="You need to open a CSV file and select an algorithm before displaying this!")
             label.pack()
             pass
 
@@ -235,7 +230,6 @@ class Window:
         # Print out the results
         for key, value in dict.items():
             self.resultLog.insert(str(key) + ": " + str(value) + "\n")
-
 
     def displayPredictionWindow(self):
         # Create a new frame/window from root window to display parameter descriptions
@@ -333,15 +327,8 @@ class Window:
 
         arrayForUserInput = np.array(arrayForUserInput).reshape(1, -1)
 
-        prediction = None
-
-        if (self.algorithm != "Keras"):
-            prediction = self.classifier.predict(arrayForUserInput)[0]
-        else:
-            # Using label_encoder to reverse the one-hot-encoding (from numerical label to categorical label)
-            prediction = self.label_encoder.inverse_transform(np.argmax(self.classifier.predict(arrayForUserInput)[0]))
+        prediction = self.classifier.predict(arrayForUserInput)[0]
         self.predictionLog.insert("Prediction: " + str(prediction) + "\n\n")
-
 
     # Remove features from label listbox when user selects the features
     def removeFeatures(self, event):
@@ -444,7 +431,7 @@ class Window:
 
         # Option Menu for choosing machine learning algorithms
         algorithms = ["K-Nearest Neighbors", "Decision Tree", "Random Forest", "Linear Regression",
-                      "Logistic Regression", "Linear SVC", "Multilayer Perceptron", "Keras"]
+                      "Logistic Regression", "Linear SVC", "Multilayer Perceptron"]
         self.default = StringVar()
         self.default.set("Select an algorithm.")
         self.options = OptionMenu(self.mainFrame, self.default, *algorithms, command=self.selectedAlgorithm)
@@ -461,7 +448,7 @@ class Window:
 
         # Option Menu for choosing machine learning algorithms
         algorithms = ["K-Nearest Neighbors", "Decision Tree", "Random Forest", "Linear Regression",
-                      "Logistic Regression", "Linear SVC", "Multilayer Perceptron", "Keras"]
+                      "Logistic Regression", "Linear SVC", "Multilayer Perceptron"]
         self.default = StringVar()
         self.default.set(algorithm)
         self.options = OptionMenu(self.mainFrame, self.default, *algorithms, command=self.selectedAlgorithm)
@@ -599,40 +586,6 @@ class Window:
             self.paramDesc[
                 "hidden_layer_sizes"] = "tuple, length = n_layers - 2, default (100,)\nThe ith element represents the number of neurons in the ith hidden layer."
 
-        elif algorithm == "Keras":
-            Label(self.mainFrame, text="Number of hidden layers", relief=RIDGE).pack()
-            self.numberOfHiddenLayers = Entry(self.mainFrame, validate="all", validatecommand=vcmdForInt)
-            self.numberOfHiddenLayers.insert(0, 1)
-            self.numberOfHiddenLayers.pack()
-            parameters.append(self.numberOfHiddenLayers)
-
-            Label(self.mainFrame, text="Hidden layer sizes", relief=RIDGE).pack()
-            self.hidden_layer_sizes = Entry(self.mainFrame, validate="all", validatecommand=vcmdForHiddenLayerSizes)
-            self.hidden_layer_sizes.insert(0, 2)
-            self.hidden_layer_sizes.pack()
-            parameters.append(self.hidden_layer_sizes)
-
-            Label(self.mainFrame, text="epochs", relief=RIDGE).pack()
-            self.epochs = Entry(self.mainFrame, validate="all", validatecommand=vcmdForInt)
-            self.epochs.insert(0, 200)
-            self.epochs.pack()
-            parameters.append(self.epochs)
-
-            Label(self.mainFrame, text="batch_size", relief=RIDGE).pack()
-            self.batch_size = Entry(self.mainFrame, validate="all", validatecommand=vcmdForInt)
-            self.batch_size.insert(0, 128)
-            self.batch_size.pack()
-            parameters.append(self.batch_size)
-
-            self.paramDesc["link"] = "https:////keras.io/models/sequential/"
-            self.paramDesc["number of hidden layers"] = "Integer.\nSpecify the number of hidden layers."
-            self.paramDesc[
-                "hidden layer sizes"] = "tuple, length = n_layers - 2, default (100,)\nThe ith element represents the number of neurons in the ith hidden layer."
-            self.paramDesc[
-                "epochs"] = "Integer.\nNumber of epochs to train the model. An epoch is an iteration over the entire x and y data provided. Note that in conjunction with initial_epoch,  epochs is to be understood as 'final epoch'. The model is not trained for a number of iterations given by epochs, but merely until the epoch of index epochs is reached."
-            self.paramDesc[
-                "batch_size"] = " Integer or None.\nNumber of samples per gradient update. If unspecified, batch_size will default to 32."
-
         # Compute using the specified parameters
         # Lambda means that the method won't be called immediately (only when button is pressed)
         submit = Button(self.mainFrame, text="Submit", command=lambda: self.validateAllInputs(parameters))
@@ -660,7 +613,6 @@ class Window:
             self.mainLog.insert("Please enter an integer (if the field is empty, enter an integer greater than 0).\n")
             self.mainFrame.bell()
             return False
-
 
     # Validate integer inputs (don't allow user to enter anything else)
     def validateInt2(self, d, i, P, s, S, v, V, W):
@@ -730,11 +682,13 @@ class Window:
             if S.isdigit() or S == "," or S == "":
                 return True
             else:
-                self.mainLog.insert("Hidden layer sizes should be separated by commas (ex: 2,3,4). This means there are 2 nodes in first hidden layer, 3 nodes in second hidden layer, and 4 nodes in the third hidden layer.!\n")
+                self.mainLog.insert(
+                    "Hidden layer sizes should be separated by commas (ex: 2,3,4). This means there are 2 nodes in first hidden layer, 3 nodes in second hidden layer, and 4 nodes in the third hidden layer.!\n")
                 self.mainFrame.bell()
                 return False
         except ValueError:
-            self.mainLog.insert("Hidden layer sizes should be separated by commas (ex: 2,3,4). This means there are 2 nodes in first hidden layer, 3 nodes in second hidden layer, and 4 nodes in the third hidden layer.!\n")
+            self.mainLog.insert(
+                "Hidden layer sizes should be separated by commas (ex: 2,3,4). This means there are 2 nodes in first hidden layer, 3 nodes in second hidden layer, and 4 nodes in the third hidden layer.!\n")
             self.mainFrame.bell()
             return False
 
@@ -790,100 +744,29 @@ class Window:
                                             learning_rate_init=0.002, alpha=float(self.alpha.get()),
                                             hidden_layer_sizes=modified_hidden_layer_sizes)
 
-        elif self.algorithm == "Keras":
-            # Make numpy arrays from the split dataframes
-            X_train = np.array(X_train)
-            y_train = np.array(y_train)
+        # fit the model with the training set
+        self.classifier.fit(X_train, y_train)
 
-            # Label encoder for transforming categorical labels into numerical labels (one-hot encoded)
-            self.label_encoder = LabelEncoder()
-            y_train = self.label_encoder.fit_transform(y_train)
-            y_train = pd.get_dummies(y_train).values
+        # Predict method is used for creating a prediction on testing data
+        y_predict = self.classifier.predict(X_test)
 
-            X_test = np.array(X_test)
-            y_test = np.array(y_test)
-            y_test = self.label_encoder.fit_transform(y_test)
-            y_test = pd.get_dummies(y_test).values
+        # Accuracy of testing data on predictive model
+        accuracy = accuracy_score(y_test, y_predict)
 
-            # Turn the string (containing commas) into a list
-            modified_hidden_layer_sizes = self.hidden_layer_sizes.get().split(",")
+        # Add #-fold Cross Validation with Supervised Learning
+        accuracy_list = cross_val_score(self.classifier, self.X, self.y, cv=int(self.cv.get()), scoring='accuracy')
 
-            # Remove any empty string in the list
-            modified_hidden_layer_sizes = [item.strip() for item in modified_hidden_layer_sizes if item.strip()]
+        # # Report
+        # report = classification_report(y_test, y_predict, target_names=self.labels)
 
-            # Turn the list of strings into a tuple of int
-            modified_hidden_layer_sizes = tuple([int(i) for i in modified_hidden_layer_sizes])
-
-            # create model
-            self.classifier = Sequential()
-            # Input layer (input is the number of features we have)
-            self.classifier.add(Dense(self.numberOfFeatures, input_dim=self.numberOfFeatures, activation='relu'))
-            # Normalize the activations of the previous layer at each batch
-            self.classifier.add(BatchNormalization())
-
-            # Hidden Layer (number of features + number of labels)/2 is the rule of thumb for neurons in hidden layer
-            for i in modified_hidden_layer_sizes:
-                self.classifier.add(Dense(i, activation='relu'))
-
-            # Output layer
-            self.classifier.add(Dense(self.numberOfLabels, activation='softmax'))
-            # model.add(Dropout(0.2))
-
-            # Compile model
-            self.classifier.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-
-            # Print epoch number
-            epoch_begin_print_callback = LambdaCallback(
-                on_epoch_begin=lambda epoch, logs: self.mainLog.insert(str(epoch) + "\n"))
-
-            # Print the batch number at the beginning of every batch.
-            batch_print_callback = LambdaCallback(
-                on_batch_begin=lambda batch, logs: self.mainLog.insert(str(batch) + "\n"))
-
-            # Fit the model
-            self.classifier.fit(X_train, y_train, epochs=int(self.epochs.get()), batch_size=int(self.batch_size.get()))
-
-            # Accuracy of testing data on predictive model
-            score = self.classifier.evaluate(X_test, y_test, batch_size=int(self.batch_size.get()))
-
-        if (self.algorithm != "Keras"):
-            # fit the model with the training set
-            self.classifier.fit(X_train, y_train)
-
-            # Predict method is used for creating a prediction on testing data
-            y_predict = self.classifier.predict(X_test)
-
-            # Accuracy of testing data on predictive model
-            accuracy = accuracy_score(y_test, y_predict)
-
-            # Add #-fold Cross Validation with Supervised Learning
-            accuracy_list = cross_val_score(self.classifier, self.X, self.y, cv=int(self.cv.get()), scoring='accuracy')
-
-            # # Report
-            # report = classification_report(y_test, y_predict, target_names=self.labels)
-
-            # Dictionary containing information
-            dict = {"Training Set Size": 1.00 - float(self.test_size.get()),
-                    "Testing Set Size": float(self.test_size.get()),
-                    "Training Set Shape": X_train.shape,
-                    "Testing Set Shape": X_test.shape,
-                    "Classifier": self.classifier,
-                    "Accuracy for " + self.algorithm: str(accuracy),
-                    "Cross Validation for " + self.algorithm: accuracy_list.mean()}
-
-        else:
-            # Dictionary containing information
-            dict = {"Training Set Size": 1.00 - float(self.test_size.get()),
-                    "Testing Set Size": float(self.test_size.get()),
-                    "Training Set Shape": X_train.shape,
-                    "Testing Set Shape": X_test.shape,
-                    "Number Of hidden layers": self.numberOfHiddenLayers.get(),
-                    "Hidden layer sizes:": self.hidden_layer_sizes.get(),
-                    "Epochs": self.epochs.get(),
-                    "Batch Size": self.batch_size.get(),
-                    "Loss": score[0],
-                    "Accuracy": score[1],
-                    }
+        # Dictionary containing information
+        dict = {"Training Set Size": 1.00 - float(self.test_size.get()),
+                "Testing Set Size": float(self.test_size.get()),
+                "Training Set Shape": X_train.shape,
+                "Testing Set Shape": X_test.shape,
+                "Classifier": self.classifier,
+                "Accuracy for " + self.algorithm: str(accuracy),
+                "Cross Validation for " + self.algorithm: accuracy_list.mean()}
 
         self.displayResult(dict)
         self.displayPredictionWindow()
